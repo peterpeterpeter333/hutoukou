@@ -32,7 +32,7 @@ export const CIRCLES: {
   {
     slug: "parents",
     name: "保護者の相談室",
-    emoji: "👨‍👩‍👧",
+    emoji: "🤝",
     description: "お子さんが不登校の保護者どうしで悩みや工夫をシェア。ひとりで抱え込まないで。",
   },
   {
