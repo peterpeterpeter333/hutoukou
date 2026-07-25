@@ -1,0 +1,128 @@
+// とびら (Tobira) — 不登校の子ども・親のためのQ&A・交流コミュニティ
+// Prisma schema. 開発は SQLite、本番は DATABASE_URL を Postgres 等に差し替え可能。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// 利用者（ペンネーム＝匿名前提）。当事者・保護者・支援者など。
+model User {
+  id          String   @id @default(cuid())
+  handle      String   @unique // URL用の一意なハンドル（例: tobira-1234）
+  displayName String // 画面表示名（ニックネーム）
+  role        String   @default("member") // member(当事者) | parent(保護者) | supporter(支援者)
+  bio         String?
+  createdAt   DateTime @default(now())
+
+  questions   Question[]
+  answers     Answer[]
+  votes       Vote[]
+  memberships CircleMember[]
+  circlePosts CirclePost[]
+}
+
+/// 質問（SEOの主役。1件=1URL）
+model Question {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  body      String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  circleId  String?
+  circle    Circle?  @relation(fields: [circleId], references: [id])
+  views     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  answers Answer[]
+  votes   Vote[]
+  tags    TagOnQuestion[]
+}
+
+/// 回答
+model Answer {
+  id         String   @id @default(cuid())
+  body       String
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id])
+  isAccepted Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  votes Vote[]
+}
+
+/// いいね/役に立った（質問・回答どちらにも付けられる）
+model Vote {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  questionId String?
+  question   Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answerId   String?
+  answer     Answer?   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+
+  @@unique([userId, questionId])
+  @@unique([userId, answerId])
+}
+
+/// タグ（検索・回遊用）
+model Tag {
+  id        String          @id @default(cuid())
+  slug      String          @unique
+  name      String
+  questions TagOnQuestion[]
+}
+
+model TagOnQuestion {
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  tagId      String
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, tagId])
+}
+
+/// サークル（テーマ別の交流コミュニティ。Yayのサークルのイメージ）
+model Circle {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String
+  emoji       String   @default("🌱")
+  createdAt   DateTime @default(now())
+
+  questions Question[]
+  members   CircleMember[]
+  posts     CirclePost[]
+}
+
+model CircleMember {
+  id        String   @id @default(cuid())
+  circleId  String
+  circle    Circle   @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([circleId, userId])
+}
+
+/// サークル内のつぶやき投稿
+model CirclePost {
+  id        String   @id @default(cuid())
+  body      String
+  circleId  String
+  circle    Circle   @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+}
