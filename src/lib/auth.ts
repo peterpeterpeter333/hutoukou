@@ -60,3 +60,28 @@ const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function isValidEmail(email: string): boolean {
   return emailRe.test(email);
 }
+
+// よく使われる/推測されやすいパスワード（総当たりで最初に試される）
+const COMMON_PASSWORDS = new Set([
+  "password", "password1", "password123", "passw0rd", "12345678", "123456789",
+  "1234567890", "qwerty123", "qwertyuiop", "11111111", "00000000", "abc12345",
+  "iloveyou", "welcome1", "admin123", "letmein1", "tobira123", "aaaaaaaa",
+]);
+
+/** パスワード強度を検証。問題なければ null、あればエラーメッセージを返す。 */
+export function validatePassword(password: string, email?: string): string | null {
+  if (password.length < 8) return "パスワードは8文字以上にしてください。";
+  if (password.length > 200) return "パスワードが長すぎます。";
+  if (COMMON_PASSWORDS.has(password.toLowerCase())) {
+    return "推測されやすいパスワードです。別のものにしてください。";
+  }
+  if (email && password.toLowerCase() === email.toLowerCase()) {
+    return "メールアドレスと同じパスワードは使えません。";
+  }
+  if (/^(.)\1+$/.test(password)) return "同じ文字の繰り返しは使えません。";
+  // 数字だけ・英字だけは弱いので、両方を含めるよう促す
+  if (/^\d+$/.test(password) || /^[a-zA-Z]+$/.test(password)) {
+    return "英字と数字を組み合わせると安全です。";
+  }
+  return null;
+}

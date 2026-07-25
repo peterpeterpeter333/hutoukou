@@ -28,6 +28,9 @@ model User {
   memberships CircleMember[]
   circlePosts CirclePost[]
   sessions    Session[]
+
+  notifications      Notification[] @relation("Recipient") // 受け取った通知
+  actedNotifications Notification[] @relation("Actor") // 自分が起こした通知
 }
 
 /// ログインセッション（ランダムトークン。cookieにはこのidを保存）
@@ -39,6 +42,29 @@ model Session {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+/// レート制限カウンタ（ログイン総当たり・登録スパム対策）
+model RateLimit {
+  key       String   @id // 例: "login:ip:1.2.3.4" / "login:email:x@x"
+  count     Int      @default(0)
+  windowEnd DateTime
+}
+
+/// 通知（自分の質問に回答、投稿に返信 など）
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String // 受け取る人
+  user      User     @relation("Recipient", fields: [userId], references: [id], onDelete: Cascade)
+  actorId   String? // 起こした人
+  actor     User?    @relation("Actor", fields: [actorId], references: [id], onDelete: SetNull)
+  type      String // answer | reply | vote
+  message   String
+  link      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
 }
 
 /// 質問（SEOの主役。1件=1URL）

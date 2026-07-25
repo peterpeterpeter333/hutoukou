@@ -35,6 +35,11 @@ export default async function LoginPage({
           メールアドレスまたはパスワードが正しくありません。
         </p>
       )}
+      {error === "ratelimit" && (
+        <p className="mt-5 rounded-xl bg-[var(--color-accent-soft)] px-4 py-3 text-sm text-[#c15b3f]">
+          ログインの試行が多すぎます。安全のため、しばらく時間をおいてからお試しください。
+        </p>
+      )}
 
       <form action={loginUser} className="mt-6 space-y-4">
         <label className="block">

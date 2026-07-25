@@ -128,6 +128,19 @@ export async function getStats() {
   return { questions, answers, users, circles };
 }
 
+export async function getUnreadNotificationCount(userId: string): Promise<number> {
+  return prisma.notification.count({ where: { userId, read: false } });
+}
+
+export async function getNotifications(userId: string) {
+  return prisma.notification.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    include: { actor: true },
+  });
+}
+
 export async function getUserByHandle(handle: string) {
   return prisma.user.findUnique({
     where: { handle },

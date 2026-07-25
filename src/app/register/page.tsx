@@ -15,8 +15,9 @@ export const metadata: Metadata = {
 
 const ERRORS: Record<string, string> = {
   email: "メールアドレスの形式が正しくありません。",
-  password: "パスワードは8文字以上にしてください。",
+  password: "パスワードは8文字以上で、英字と数字を組み合わせてください（推測されやすいものは不可）。",
   taken: "このメールアドレスは既に登録されています。ログインしてください。",
+  ratelimit: "登録の試行が多すぎます。しばらく時間をおいてからお試しください。",
 };
 
 export default async function RegisterPage({

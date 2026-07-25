@@ -12,8 +12,13 @@ import {
   destroySession,
   getAuthUser,
   isValidEmail,
+  validatePassword,
 } from "./auth";
+import { getClientIp, isBlocked, bump, resetLimit } from "./ratelimit";
+import { createNotification } from "./notify";
 import { slugify, circleSlugify } from "./slug";
+
+const MIN = 60 * 1000;
 
 function tagNameToSlug(name: string): string {
   const ascii = name
@@ -84,6 +89,21 @@ export async function postAnswer(formData: FormData) {
   const user = await ensureUser({ displayName, role });
   await prisma.answer.create({ data: { body, questionId, authorId: user.id } });
 
+  // 質問の投稿者に通知
+  const question = await prisma.question.findUnique({
+    where: { id: questionId },
+    select: { authorId: true, title: true },
+  });
+  if (question) {
+    await createNotification({
+      userId: question.authorId,
+      actorId: user.id,
+      type: "answer",
+      message: `あなたの質問「${question.title.slice(0, 24)}」に回答がつきました`,
+      link: `/questions/${slug}#answers`,
+    });
+  }
+
   revalidatePath(`/questions/${slug}`);
   redirect(`/questions/${slug}#answers`);
 }
@@ -153,6 +173,23 @@ export async function postToCircle(formData: FormData) {
   });
   await prisma.circlePost.create({ data: { body, circleId, authorId: user.id, parentId } });
 
+  // 返信のときは親投稿の投稿者に通知
+  if (parentId) {
+    const parent = await prisma.circlePost.findUnique({
+      where: { id: parentId },
+      select: { authorId: true },
+    });
+    if (parent) {
+      await createNotification({
+        userId: parent.authorId,
+        actorId: user.id,
+        type: "reply",
+        message: "あなたのタイムライン投稿に返信がつきました",
+        link: `/circles/${slug}?tab=timeline#posts`,
+      });
+    }
+  }
+
   revalidatePath(`/circles/${slug}`);
   redirect(`/circles/${slug}?tab=timeline#posts`);
 }
@@ -194,8 +231,16 @@ export async function registerUser(formData: FormData) {
   const displayName = String(formData.get("displayName") ?? "").trim();
   const role = String(formData.get("role") ?? "member").trim();
 
+  // スパム登録対策：同一IPからの登録回数を制限（1時間に5回まで）
+  const ip = await getClientIp();
+  if (await isBlocked(`register:ip:${ip}`, 5)) redirect("/register?error=ratelimit");
+
   if (!isValidEmail(email)) redirect("/register?error=email");
-  if (password.length < 8) redirect("/register?error=password");
+
+  const pwError = validatePassword(password, email);
+  if (pwError) redirect("/register?error=password");
+
+  await bump(`register:ip:${ip}`, 60 * MIN);
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) redirect("/register?error=taken");
@@ -239,12 +284,24 @@ export async function loginUser(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
 
+  // 総当たり対策：IP・メールごとに失敗回数を制限
+  const ip = await getClientIp();
+  const ipKey = `login:ip:${ip}`;
+  const emailKey = `login:email:${email}`;
+  if ((await isBlocked(ipKey, 10)) || (await isBlocked(emailKey, 5))) {
+    redirect("/login?error=ratelimit");
+  }
+
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !user.passwordHash) redirect("/login?error=invalid");
+  if (!user || !user.passwordHash || !(await verifyPassword(password, user.passwordHash))) {
+    // 失敗のみカウント（10分ウィンドウ）
+    await bump(ipKey, 10 * MIN);
+    await bump(emailKey, 10 * MIN);
+    redirect("/login?error=invalid");
+  }
 
-  const ok = await verifyPassword(password, user.passwordHash);
-  if (!ok) redirect("/login?error=invalid");
-
+  // 成功したらメールの失敗カウンタをリセット
+  await resetLimit(emailKey);
   await createSession(user.id);
   redirect(`/u/${user.handle}`);
 }
@@ -254,6 +311,16 @@ export async function logoutUser() {
   await destroySession();
   revalidatePath("/");
   redirect("/");
+}
+
+// ---- 通知を既読にする（現在ユーザーの未読をすべて） ----
+export async function markNotificationsRead() {
+  const user = await ensureUser();
+  await prisma.notification.updateMany({
+    where: { userId: user.id, read: false },
+    data: { read: true },
+  });
+  revalidatePath("/notifications");
 }
 
 // ---- プロフィール詳細を更新（bio含む・本登録者向け） ----

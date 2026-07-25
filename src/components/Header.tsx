@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { getAuthUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/session";
+import { getUnreadNotificationCount } from "@/lib/queries";
 import { logoutUser } from "@/lib/actions";
 import { SITE } from "@/lib/site";
 import { Avatar } from "./ui";
 
 export async function Header() {
   const user = await getAuthUser();
+  const current = await getCurrentUser();
+  const unread = current ? await getUnreadNotificationCount(current.id) : 0;
 
   return (
     <header className="sticky top-0 z-40 border-b bg-[color-mix(in_srgb,var(--bg)_88%,transparent)] backdrop-blur">
@@ -37,6 +41,22 @@ export async function Header() {
             <span aria-hidden>✏️</span>
             質問する
           </Link>
+
+          {current && (
+            <Link
+              href="/notifications"
+              className="relative rounded-full p-2 hover:bg-[var(--color-brand-soft)]"
+              title="通知"
+              aria-label={`通知${unread > 0 ? `（未読${unread}件）` : ""}`}
+            >
+              <span aria-hidden className="text-lg">🔔</span>
+              {unread > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-[18px] items-center justify-center rounded-full bg-[var(--color-accent)] px-1 text-[0.65rem] font-bold leading-[18px] text-white">
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </Link>
+          )}
 
           {user ? (
             <div className="flex items-center gap-1.5">
