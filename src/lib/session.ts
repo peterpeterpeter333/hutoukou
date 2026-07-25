@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { prisma } from "./db";
 import type { User } from "@prisma/client";
+import { getAuthUser } from "./auth";
 
 const COOKIE = "tobira_uid";
 const ONE_YEAR = 60 * 60 * 24 * 365;
@@ -19,8 +20,12 @@ function randomHandle(): string {
   return `tobira-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/** 描画中（RSC）でも呼べる読み取り専用。ログイン相当の現在ユーザーを返す。 */
+/** 描画中（RSC）でも呼べる読み取り専用。現在ユーザーを返す。
+ *  本登録ログインがあればそれを優先し、無ければ匿名(cookie)ユーザーを返す。 */
 export async function getCurrentUser(): Promise<User | null> {
+  const authed = await getAuthUser();
+  if (authed) return authed;
+
   const jar = await cookies();
   const id = jar.get(COOKIE)?.value;
   if (!id) return null;
@@ -36,13 +41,28 @@ export async function ensureUser(opts?: {
   displayName?: string;
   role?: string;
 }): Promise<User> {
+  const displayName = opts?.displayName?.trim();
+  const role = opts?.role?.trim();
+
+  // 本登録ログイン中ならそのアカウントを使う
+  const authed = await getAuthUser();
+  if (authed) {
+    if ((displayName && displayName !== authed.displayName) || (role && role !== authed.role)) {
+      return prisma.user.update({
+        where: { id: authed.id },
+        data: {
+          ...(displayName ? { displayName } : {}),
+          ...(role ? { role } : {}),
+        },
+      });
+    }
+    return authed;
+  }
+
   const jar = await cookies();
   const id = jar.get(COOKIE)?.value;
 
   let user = id ? await prisma.user.findUnique({ where: { id } }) : null;
-
-  const displayName = opts?.displayName?.trim();
-  const role = opts?.role?.trim();
 
   if (!user) {
     user = await prisma.user.create({

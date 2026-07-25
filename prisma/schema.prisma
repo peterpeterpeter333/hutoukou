@@ -11,19 +11,34 @@ datasource db {
 }
 
 /// 利用者（ペンネーム＝匿名前提）。当事者・保護者・支援者など。
+/// email/passwordHash が無いユーザーは匿名（cookieのみ）。設定すると本登録アカウント。
 model User {
-  id          String   @id @default(cuid())
-  handle      String   @unique // URL用の一意なハンドル（例: tobira-1234）
-  displayName String // 画面表示名（ニックネーム）
-  role        String   @default("member") // member(当事者) | parent(保護者) | supporter(支援者)
-  bio         String?
-  createdAt   DateTime @default(now())
+  id           String   @id @default(cuid())
+  handle       String   @unique // URL用の一意なハンドル（例: tobira-1234）
+  displayName  String // 画面表示名（ニックネーム）
+  role         String   @default("member") // member(当事者) | parent(保護者) | supporter(支援者)
+  bio          String?
+  email        String?  @unique // 本登録時のみ
+  passwordHash String? // 本登録時のみ（bcrypt）
+  createdAt    DateTime @default(now())
 
   questions   Question[]
   answers     Answer[]
   votes       Vote[]
   memberships CircleMember[]
   circlePosts CirclePost[]
+  sessions    Session[]
+}
+
+/// ログインセッション（ランダムトークン。cookieにはこのidを保存）
+model Session {
+  id        String   @id // ランダムトークン
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 /// 質問（SEOの主役。1件=1URL）

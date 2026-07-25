@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/session";
+import { getAuthUser } from "@/lib/auth";
+import { logoutUser } from "@/lib/actions";
 import { SITE } from "@/lib/site";
 import { Avatar } from "./ui";
 
 export async function Header() {
-  const user = await getCurrentUser();
+  const user = await getAuthUser();
 
   return (
     <header className="sticky top-0 z-40 border-b bg-[color-mix(in_srgb,var(--bg)_88%,transparent)] backdrop-blur">
@@ -36,11 +37,27 @@ export async function Header() {
             <span aria-hidden>✏️</span>
             質問する
           </Link>
+
           {user ? (
-            <Link href={`/u/${user.handle}`} title={user.displayName}>
-              <Avatar name={user.displayName} handle={user.handle} size={34} />
+            <div className="flex items-center gap-1.5">
+              <Link href={`/u/${user.handle}`} title={user.displayName} className="flex items-center">
+                <Avatar name={user.displayName} handle={user.handle} size={34} />
+              </Link>
+              <form action={logoutUser}>
+                <button
+                  type="submit"
+                  className="rounded-full px-2 py-1 text-xs text-[var(--muted)] hover:text-[var(--fg)]"
+                  title="ログアウト"
+                >
+                  ログアウト
+                </button>
+              </form>
+            </div>
+          ) : (
+            <Link href="/login" className="btn btn-ghost !py-2 text-sm">
+              ログイン
             </Link>
-          ) : null}
+          )}
         </div>
       </div>
     </header>

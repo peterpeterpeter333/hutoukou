@@ -2,8 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { prisma } from "./db";
 import { ensureUser } from "./session";
+import {
+  hashPassword,
+  verifyPassword,
+  createSession,
+  destroySession,
+  getAuthUser,
+  isValidEmail,
+} from "./auth";
 import { slugify, circleSlugify } from "./slug";
 
 function tagNameToSlug(name: string): string {
@@ -175,4 +184,92 @@ export async function saveProfile(formData: FormData) {
   const role = String(formData.get("role") ?? "").trim();
   await ensureUser({ displayName, role });
   revalidatePath("/");
+}
+
+// ---- 新規登録（メール＋パスワード） ----
+// 匿名で使っていた場合は、その投稿を引き継いでアカウント化する。
+export async function registerUser(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  const displayName = String(formData.get("displayName") ?? "").trim();
+  const role = String(formData.get("role") ?? "member").trim();
+
+  if (!isValidEmail(email)) redirect("/register?error=email");
+  if (password.length < 8) redirect("/register?error=password");
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) redirect("/register?error=taken");
+
+  const passwordHash = await hashPassword(password);
+
+  // 匿名cookieユーザーがいれば昇格（投稿を引き継ぐ）、いなければ新規作成
+  const jar = await cookies();
+  const anonId = jar.get("tobira_uid")?.value;
+  const anon = anonId ? await prisma.user.findUnique({ where: { id: anonId } }) : null;
+
+  let user;
+  if (anon && !anon.email) {
+    user = await prisma.user.update({
+      where: { id: anon.id },
+      data: {
+        email,
+        passwordHash,
+        ...(displayName ? { displayName } : {}),
+        ...(role ? { role } : {}),
+      },
+    });
+  } else {
+    user = await prisma.user.create({
+      data: {
+        handle: `tobira-${Math.random().toString(36).slice(2, 8)}`,
+        displayName: displayName || "とびらユーザー",
+        role: role || "member",
+        email,
+        passwordHash,
+      },
+    });
+  }
+
+  await createSession(user.id);
+  redirect(`/u/${user.handle}`);
+}
+
+// ---- ログイン ----
+export async function loginUser(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user || !user.passwordHash) redirect("/login?error=invalid");
+
+  const ok = await verifyPassword(password, user.passwordHash);
+  if (!ok) redirect("/login?error=invalid");
+
+  await createSession(user.id);
+  redirect(`/u/${user.handle}`);
+}
+
+// ---- ログアウト ----
+export async function logoutUser() {
+  await destroySession();
+  revalidatePath("/");
+  redirect("/");
+}
+
+// ---- プロフィール詳細を更新（bio含む・本登録者向け） ----
+export async function updateAccount(formData: FormData) {
+  const user = await getAuthUser();
+  if (!user) redirect("/login");
+  const displayName = String(formData.get("displayName") ?? "").trim();
+  const role = String(formData.get("role") ?? "").trim();
+  const bio = String(formData.get("bio") ?? "").trim();
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      ...(displayName ? { displayName } : {}),
+      ...(role ? { role } : {}),
+      bio: bio || null,
+    },
+  });
+  revalidatePath(`/u/${user.handle}`);
 }
