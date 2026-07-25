@@ -141,12 +141,34 @@ async function main() {
     { slug: "parents", body: "今日も一日おつかれさまでした。みんな頑張りすぎないで。", role: "parent" },
     { slug: "kokoro", body: "しんどい日はここに来て『わかる』って言ってもらえるだけで救われます。", role: "member" },
   ];
+  const createdPosts: Record<string, string> = {}; // slug -> 最初の投稿id（返信サンプル用）
   for (const p of circlePosts) {
-    await prisma.circlePost.create({
+    const created = await prisma.circlePost.create({
       data: {
         body: p.body,
         circleId: circleBySlug[p.slug],
         authorId: pick(users[p.role], p.body.length),
+      },
+    });
+    if (!createdPosts[p.slug]) createdPosts[p.slug] = created.id;
+  }
+
+  // タイムラインの返信サンプル
+  const replies: { slug: string; body: string; role: keyof typeof users }[] = [
+    { slug: "school-refusal", body: "その一歩、すごく大きいと思う。えらいよ🌱", role: "supporter" },
+    { slug: "school-refusal", body: "わかる…外の空気って、それだけで少し気持ちが動くよね。", role: "member" },
+    { slug: "hobby", body: "私も絵描くの好きです！ぜひ見せ合いたい〜", role: "member" },
+    { slug: "parents", body: "その言葉に救われました。今日もありがとうございます。", role: "parent" },
+  ];
+  for (const r of replies) {
+    const parentId = createdPosts[r.slug];
+    if (!parentId) continue;
+    await prisma.circlePost.create({
+      data: {
+        body: r.body,
+        circleId: circleBySlug[r.slug],
+        authorId: pick(users[r.role], r.body.length + 1),
+        parentId,
       },
     });
   }

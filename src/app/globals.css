@@ -21,21 +21,13 @@
 }
 
 :root {
+  /* OS/ブラウザがダークでも、常に柔らかいライト基調で表示する */
+  color-scheme: light;
   --bg: var(--color-cream);
   --fg: var(--color-ink);
   --card: var(--color-surface);
   --border: var(--color-line);
   --muted: var(--color-muted);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #16191c;
-    --fg: #eceae5;
-    --card: #1f2327;
-    --border: #2c3237;
-    --muted: #9a978f;
-  }
 }
 
 * {

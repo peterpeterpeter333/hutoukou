@@ -116,7 +116,7 @@ model CircleMember {
   @@unique([circleId, userId])
 }
 
-/// サークル内のつぶやき投稿
+/// サークル内のタイムライン投稿（返信もこのモデル。parentId があれば返信）
 model CirclePost {
   id        String   @id @default(cuid())
   body      String
@@ -125,4 +125,9 @@ model CirclePost {
   authorId  String
   author    User     @relation(fields: [authorId], references: [id])
   createdAt DateTime @default(now())
+
+  // 返信（スレッド）: 親投稿への自己参照
+  parentId String?
+  parent   CirclePost?  @relation("PostReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  CirclePost[] @relation("PostReplies")
 }

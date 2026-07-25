@@ -126,13 +126,14 @@ export async function toggleJoinCircle(formData: FormData) {
   revalidatePath("/circles");
 }
 
-// ---- サークルへの投稿（つぶやき） ----
+// ---- タイムラインへの投稿 / 返信 ----
 export async function postToCircle(formData: FormData) {
   const circleId = String(formData.get("circleId") ?? "");
   const slug = String(formData.get("slug") ?? "");
   const body = String(formData.get("body") ?? "").trim();
   const displayName = String(formData.get("displayName") ?? "").trim();
-  if (!circleId || body.length < 1) redirect(`/circles/${slug}`);
+  const parentId = String(formData.get("parentId") ?? "") || null;
+  if (!circleId || body.length < 1) redirect(`/circles/${slug}?tab=timeline`);
 
   const user = await ensureUser({ displayName });
   // 投稿者は自動的にメンバーにする
@@ -141,10 +142,10 @@ export async function postToCircle(formData: FormData) {
     create: { circleId, userId: user.id },
     update: {},
   });
-  await prisma.circlePost.create({ data: { body, circleId, authorId: user.id } });
+  await prisma.circlePost.create({ data: { body, circleId, authorId: user.id, parentId } });
 
   revalidatePath(`/circles/${slug}`);
-  redirect(`/circles/${slug}#posts`);
+  redirect(`/circles/${slug}?tab=timeline#posts`);
 }
 
 // ---- 新しいサークルを作成 ----

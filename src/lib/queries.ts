@@ -84,11 +84,23 @@ export async function getCircleBySlug(slug: string) {
     where: { slug },
     include: {
       _count: { select: { members: true, questions: true, posts: true } },
-      posts: {
-        orderBy: { createdAt: "desc" },
-        take: 30,
+    },
+  });
+}
+
+// タイムライン（トップレベル投稿＋返信）を取得
+export async function getCircleTimeline(circleId: string) {
+  return prisma.circlePost.findMany({
+    where: { circleId, parentId: null },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    include: {
+      author: true,
+      replies: {
+        orderBy: { createdAt: "asc" },
         include: { author: true },
       },
+      _count: { select: { replies: true } },
     },
   });
 }
