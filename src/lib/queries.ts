@@ -53,12 +53,22 @@ export async function getQuestionBySlug(slug: string) {
       circle: true,
       tags: { include: { tag: true } },
       _count: { select: { votes: true } },
+      comments: {
+        where: { hidden: false },
+        orderBy: { createdAt: "asc" },
+        include: { author: true },
+      },
       answers: {
         where: { hidden: false },
         orderBy: [{ isAccepted: "desc" }, { votes: { _count: "desc" } }, { createdAt: "asc" }],
         include: {
           author: true,
           _count: { select: { votes: true } },
+          comments: {
+            where: { hidden: false },
+            orderBy: { createdAt: "asc" },
+            include: { author: true },
+          },
         },
       },
     },
@@ -162,6 +172,15 @@ export async function getReports(status: "open" | "resolved" | "dismissed" | "al
           include: { author: true, circle: true },
         });
         if (p) preview = { text: p.body, author: p.author.displayName, hidden: p.hidden, link: `/circles/${p.circle.slug}?tab=timeline` };
+      } else if (r.targetType === "comment") {
+        const cm = await prisma.comment.findUnique({
+          where: { id: r.targetId },
+          include: { author: true, question: true, answer: { include: { question: true } } },
+        });
+        if (cm) {
+          const qSlug = cm.question?.slug ?? cm.answer?.question.slug;
+          preview = { text: cm.body, author: cm.author.displayName, hidden: cm.hidden, link: qSlug ? `/questions/${qSlug}` : "/" };
+        }
       }
       return { ...r, preview };
     })

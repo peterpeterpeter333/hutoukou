@@ -4,7 +4,7 @@ import { prisma } from "./db";
 export async function createNotification(opts: {
   userId: string; // 受け取る人
   actorId?: string | null; // 起こした人
-  type: "answer" | "reply" | "vote";
+  type: "answer" | "reply" | "vote" | "comment";
   message: string;
   link: string;
 }): Promise<void> {

@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { deleteQuestion, deleteAnswer, deleteCirclePost } from "@/lib/actions";
+import { deleteQuestion, deleteAnswer, deleteCirclePost, deleteComment } from "@/lib/actions";
 
-// 通報リンク＋（本人/管理者なら）削除。質問・回答・投稿で共通利用。
+// 通報リンク＋（本人/管理者なら）削除。質問・回答・投稿・コメントで共通利用。
 export function ModActions({
   type,
   id,
@@ -10,7 +10,7 @@ export function ModActions({
   canDelete = false,
   small = false,
 }: {
-  type: "question" | "answer" | "post";
+  type: "question" | "answer" | "post" | "comment";
   id: string;
   slug?: string;
   from: string;
@@ -49,6 +49,13 @@ export function ModActions({
             )}
             {type === "post" && (
               <form action={deleteCirclePost} className="mt-2 flex justify-end">
+                <input type="hidden" name="id" value={id} />
+                <input type="hidden" name="slug" value={slug} />
+                <button type="submit" className="btn btn-primary !py-1 text-xs">削除する</button>
+              </form>
+            )}
+            {type === "comment" && (
+              <form action={deleteComment} className="mt-2 flex justify-end">
                 <input type="hidden" name="id" value={id} />
                 <input type="hidden" name="slug" value={slug} />
                 <button type="submit" className="btn btn-primary !py-1 text-xs">削除する</button>

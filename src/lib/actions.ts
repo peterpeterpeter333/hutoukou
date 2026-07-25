@@ -36,6 +36,7 @@ async function setHidden(type: string, id: string, hidden: boolean): Promise<voi
   if (type === "question") await prisma.question.update({ where: { id }, data: { hidden } });
   else if (type === "answer") await prisma.answer.update({ where: { id }, data: { hidden } });
   else if (type === "post") await prisma.circlePost.update({ where: { id }, data: { hidden } });
+  else if (type === "comment") await prisma.comment.update({ where: { id }, data: { hidden } });
 }
 
 // 管理者のみ許可（そうでなければトップへ）
@@ -381,7 +382,7 @@ export async function reportContent(formData: FormData) {
   const detail = String(formData.get("detail") ?? "").trim().slice(0, 500);
   const from = String(formData.get("from") ?? "/");
 
-  if (!["question", "answer", "post"].includes(targetType) || !targetId) redirect(from);
+  if (!["question", "answer", "post", "comment"].includes(targetType) || !targetId) redirect(from);
   const safeReason = REPORT_REASONS.has(reason) ? reason : "other";
 
   // 通報スパム対策（同一IPで1時間に20件まで）
@@ -414,6 +415,54 @@ export async function reportContent(formData: FormData) {
   }
 
   redirect(`${from}?reported=1`);
+}
+
+// ---- 質問・回答へのコメントを投稿 ----
+export async function postComment(formData: FormData) {
+  const questionId = String(formData.get("questionId") ?? "") || null;
+  const answerId = String(formData.get("answerId") ?? "") || null;
+  const slug = String(formData.get("slug") ?? "");
+  const body = String(formData.get("body") ?? "").trim().slice(0, 500);
+  const displayName = String(formData.get("displayName") ?? "").trim();
+  if ((!questionId && !answerId) || body.length < 1) redirect(`/questions/${slug}`);
+
+  const user = await ensureUser({ displayName });
+  await prisma.comment.create({ data: { body, questionId, answerId, authorId: user.id } });
+
+  // コメント先の投稿者に通知
+  let recipientId: string | null = null;
+  if (answerId) {
+    const a = await prisma.answer.findUnique({ where: { id: answerId }, select: { authorId: true } });
+    recipientId = a?.authorId ?? null;
+  } else if (questionId) {
+    const q = await prisma.question.findUnique({ where: { id: questionId }, select: { authorId: true } });
+    recipientId = q?.authorId ?? null;
+  }
+  if (recipientId) {
+    await createNotification({
+      userId: recipientId,
+      actorId: user.id,
+      type: "comment",
+      message: answerId ? "あなたの回答にコメントがつきました" : "あなたの質問にコメントがつきました",
+      link: `/questions/${slug}#answers`,
+    });
+  }
+
+  revalidatePath(`/questions/${slug}`);
+  redirect(`/questions/${slug}#answers`);
+}
+
+// ---- コメントを削除（本人または管理者） ----
+export async function deleteComment(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  const user = await getCurrentUser();
+  const c = await prisma.comment.findUnique({ where: { id }, select: { authorId: true } });
+  if (!user || !c) redirect(`/questions/${slug}`);
+  if (c.authorId !== user.id && !user.isAdmin) redirect(`/questions/${slug}`);
+  await prisma.comment.delete({ where: { id } });
+  revalidatePath(`/questions/${slug}`);
+  redirect(`/questions/${slug}#answers`);
 }
 
 // ---- 自分の投稿を削除（本人または管理者） ----

@@ -25,6 +25,7 @@ model User {
 
   questions   Question[]
   answers     Answer[]
+  comments    Comment[]
   votes       Vote[]
   memberships CircleMember[]
   circlePosts CirclePost[]
@@ -101,9 +102,10 @@ model Question {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  answers Answer[]
-  votes   Vote[]
-  tags    TagOnQuestion[]
+  answers  Answer[]
+  votes    Vote[]
+  tags     TagOnQuestion[]
+  comments Comment[]
 }
 
 /// 回答
@@ -118,7 +120,25 @@ model Answer {
   hidden     Boolean  @default(false) // モデレーションで非表示
   createdAt  DateTime @default(now())
 
-  votes Vote[]
+  votes    Vote[]
+  comments Comment[]
+}
+
+/// コメント（質問・回答への短い返信）
+model Comment {
+  id         String    @id @default(cuid())
+  body       String
+  authorId   String
+  author     User      @relation(fields: [authorId], references: [id])
+  questionId String?
+  question   Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answerId   String?
+  answer     Answer?   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  hidden     Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+
+  @@index([questionId])
+  @@index([answerId])
 }
 
 /// いいね/役に立った（質問・回答どちらにも付けられる）

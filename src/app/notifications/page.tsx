@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const ICONS: Record<string, string> = { answer: "💬", reply: "↩", vote: "💚" };
+const ICONS: Record<string, string> = { answer: "💬", reply: "↩", vote: "💚", comment: "🗨" };
 
 export default async function NotificationsPage() {
   const user = await getCurrentUser();

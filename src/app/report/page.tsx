@@ -13,6 +13,7 @@ const TARGET_LABEL: Record<string, string> = {
   question: "質問",
   answer: "回答",
   post: "タイムライン投稿",
+  comment: "コメント",
 };
 
 const REASONS: { value: string; label: string; hint?: string }[] = [
@@ -29,7 +30,7 @@ export default async function ReportPage({
   searchParams: Promise<{ type?: string; id?: string; from?: string }>;
 }) {
   const { type = "", id = "", from = "/" } = await searchParams;
-  const valid = ["question", "answer", "post"].includes(type) && !!id;
+  const valid = ["question", "answer", "post", "comment"].includes(type) && !!id;
 
   return (
     <div className="mx-auto max-w-lg px-4 py-10">

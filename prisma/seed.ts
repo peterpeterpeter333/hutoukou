@@ -173,6 +173,24 @@ async function main() {
     });
   }
 
+  // 回答へのサンプルコメント
+  const sampleAnswers = await prisma.answer.findMany({ take: 4, orderBy: { createdAt: "asc" } });
+  const commentTexts = [
+    "この言葉に救われました。ありがとうございます。",
+    "うちも同じ状況なので、とても参考になります。",
+    "具体的で助かります。少しずつ試してみます。",
+    "そう言ってもらえるだけで、気持ちが軽くなりました。",
+  ];
+  for (let i = 0; i < sampleAnswers.length; i++) {
+    await prisma.comment.create({
+      data: {
+        body: commentTexts[i % commentTexts.length],
+        answerId: sampleAnswers[i].id,
+        authorId: pick(allUserIds, i + 5),
+      },
+    });
+  }
+
   const counts = {
     users: await prisma.user.count(),
     circles: await prisma.circle.count(),

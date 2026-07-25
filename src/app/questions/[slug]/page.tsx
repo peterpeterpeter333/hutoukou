@@ -9,6 +9,7 @@ import { Avatar, RoleBadge, Tag } from "@/components/ui";
 import { VoteButton } from "@/components/VoteButton";
 import { IdentityFields } from "@/components/IdentityFields";
 import { ModActions } from "@/components/ModActions";
+import { Comments } from "@/components/Comments";
 import { postAnswer } from "@/lib/actions";
 
 export const dynamic = "force-dynamic";
@@ -178,6 +179,16 @@ export default async function QuestionPage({
             canDelete={!!user && (user.id === q.authorId || user.isAdmin)}
           />
         </div>
+
+        <Comments
+          comments={q.comments}
+          target="question"
+          targetId={q.id}
+          slug={q.slug}
+          currentUserId={user?.id}
+          isAdmin={!!user?.isAdmin}
+          defaultName={user?.displayName ?? ""}
+        />
       </article>
 
       {/* 回答 */}
@@ -223,6 +234,16 @@ export default async function QuestionPage({
                   />
                 </div>
               </div>
+
+              <Comments
+                comments={a.comments}
+                target="answer"
+                targetId={a.id}
+                slug={q.slug}
+                currentUserId={user?.id}
+                isAdmin={!!user?.isAdmin}
+                defaultName={user?.displayName ?? ""}
+              />
             </article>
           ))}
           {q.answers.length === 0 && (
