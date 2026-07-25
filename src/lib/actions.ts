@@ -18,7 +18,7 @@ import {
 } from "./auth";
 import { getClientIp, isBlocked, bump, resetLimit } from "./ratelimit";
 import { createNotification } from "./notify";
-import { sendVerificationEmail, sendResetEmail } from "./email";
+import { sendVerificationEmail, sendResetEmail, sendContactEmail } from "./email";
 import { slugify, circleSlugify } from "./slug";
 
 const HOUR = 60 * 60 * 1000;
@@ -611,4 +611,32 @@ export async function resolveReport(formData: FormData) {
     data: { status: safe, resolvedAt: new Date() },
   });
   revalidatePath("/moderation");
+}
+
+// ---- お問い合わせ（メアド非公開・IPレート制限つき） ----
+export async function submitContact(formData: FormData) {
+  const category = String(formData.get("category") ?? "その他").slice(0, 40);
+  const name = String(formData.get("name") ?? "").trim().slice(0, 60);
+  const email = String(formData.get("email") ?? "").trim().slice(0, 200);
+  const message = String(formData.get("message") ?? "").trim().slice(0, 4000);
+
+  // ハニーポット（bot対策）：埋まっていたら成功したふりをして無視
+  if (String(formData.get("website") ?? "")) redirect("/contact?sent=1");
+
+  if (message.length < 5) redirect("/contact?error=empty");
+  if (email && !isValidEmail(email)) redirect("/contact?error=email");
+
+  // IPごとに1時間5件まで
+  const ip = await getClientIp();
+  const key = `contact:${ip}`;
+  if (await isBlocked(key, 5)) redirect("/contact?error=limit");
+  await bump(key, HOUR);
+
+  try {
+    await sendContactEmail({ category, name, email, message });
+  } catch (e) {
+    console.error("[contact] 送信失敗", e);
+    redirect("/contact?error=send");
+  }
+  redirect("/contact?sent=1");
 }

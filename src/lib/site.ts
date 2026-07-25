@@ -5,6 +5,7 @@ export const SITE = {
   description:
     "とびらは、不登校の子ども・保護者・支援者が、悩みを質問したり、経験を分かち合ったりできるQ&A・交流コミュニティです。ひとりで抱え込まず、同じ経験の仲間とつながれます。",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://tobira.example.com",
+  operator: "とびら運営",
 };
 
 export function absoluteUrl(path = ""): string {

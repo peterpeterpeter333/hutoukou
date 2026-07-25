@@ -76,3 +76,44 @@ export async function sendResetEmail(to: string, token: string): Promise<void> {
     text: `パスワードを再設定します：${url}`,
   });
 }
+
+function esc(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\n/g, "<br>");
+}
+
+/**
+ * お問い合わせを運営宛に送る。送信先は CONTACT_EMAIL（無ければ ADMIN_EMAILS の先頭）。
+ * どちらも未設定・RESEND_API_KEY 未設定ならコンソール出力のみ（開発用）。
+ */
+export async function sendContactEmail(opts: {
+  category: string;
+  name: string;
+  email: string;
+  message: string;
+}): Promise<void> {
+  const dest =
+    process.env.CONTACT_EMAIL?.trim() ||
+    process.env.ADMIN_EMAILS?.split(",")[0].trim() ||
+    "";
+  const body = `<p><strong>種別：</strong>${esc(opts.category)}</p>
+    <p><strong>お名前：</strong>${esc(opts.name || "（未記入）")}</p>
+    <p><strong>返信先メール：</strong>${esc(opts.email || "（未記入）")}</p>
+    <hr style="border:none;border-top:1px solid #ece7dd;margin:16px 0" />
+    <p>${esc(opts.message)}</p>`;
+  const text = `種別：${opts.category}\nお名前：${opts.name}\n返信先：${opts.email}\n\n${opts.message}`;
+
+  if (!dest) {
+    console.log(`[contact:dev] 送信先未設定のためログ出力のみ\n${text}`);
+    return;
+  }
+  await sendEmail({
+    to: dest,
+    subject: `【${SITE.name}】お問い合わせ（${opts.category}）`,
+    html: layout("お問い合わせが届きました", body),
+    text,
+  });
+}
