@@ -27,8 +27,8 @@ export async function getQuestions(opts: {
   if (circleSlug) where.circle = { slug: circleSlug };
   if (query) {
     where.OR = [
-      { title: { contains: query } },
-      { body: { contains: query } },
+      { title: { contains: query, mode: "insensitive" } },
+      { body: { contains: query, mode: "insensitive" } },
     ];
   }
   if (sort === "unanswered") where.answers = { none: {} };

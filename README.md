@@ -35,20 +35,23 @@
 | フレームワーク | **Next.js 16（App Router）** / React 19 |
 | 言語 | TypeScript |
 | スタイル | Tailwind CSS v4 |
-| DB / ORM | **Prisma 6** + SQLite（開発）※本番は Postgres 等に差し替え可 |
+| DB / ORM | **Prisma 6** + **PostgreSQL**（開発・本番とも。Neon 等の無料枠でOK） |
 | データ更新 | React Server Actions（JSなしでも動作するフォーム） |
 | フォント | Noto Sans JP / Zen Maru Gothic |
 
-## 🚀 セットアップ
+## 🚀 セットアップ（ローカル開発）
+
+データベースは **PostgreSQL** を使います。無料の **Neon**（https://neon.tech）でDBを1つ作り、接続文字列を控えておきます。
 
 ```bash
 # 1. 依存をインストール
 npm install
 
-# 2. 環境変数（.env）を用意
+# 2. 環境変数（.env）を用意し、DATABASE_URL に Neon の接続文字列を設定
 cp .env.example .env
+#   .env を開いて DATABASE_URL="postgresql://..." を貼り付け
 
-# 3. DBを作成 & 初期データ投入
+# 3. スキーマ反映 & 初期データ投入
 npm run db:push
 npm run db:seed
 
@@ -102,14 +105,34 @@ prisma/
   seed.ts
 ```
 
-## 🌐 本番デプロイの注意
+## 🌐 本番デプロイ（Vercel + Neon）
 
-- 開発は **SQLite** を使用しています。Vercel 等のサーバーレス環境では SQLite が永続化されないため、
-  本番では **Postgres（Supabase / Neon など）** への切り替えを推奨します。
-  1. `prisma/schema.prisma` の `datasource db { provider = "postgresql" }` に変更
-  2. `DATABASE_URL` を Postgres の接続文字列に設定
-  3. `npx prisma migrate deploy`（またはビルド時に反映）
-- `NEXT_PUBLIC_SITE_URL` に本番URLを設定すると、canonical / OGP / sitemap が正しく出力されます。
+### 1. Neon で Postgres を用意
+1. https://neon.tech に登録 → プロジェクト作成（無料枠）
+2. 接続文字列（`postgresql://...?sslmode=require`）をコピー
+
+### 2. Neon にスキーマ・初期データを投入（ローカルから一度だけ）
+```bash
+# .env の DATABASE_URL を Neon の接続文字列にして
+npm run db:push
+npm run db:seed
+```
+
+### 3. Vercel でデプロイ
+1. https://vercel.com に GitHub で登録
+2. 「New Project」→ `peterpeterpeter333/hutoukou` を Import
+3. **Environment Variables** に以下を設定：
+   | 変数 | 値 |
+   | --- | --- |
+   | `DATABASE_URL` | Neon の接続文字列 |
+   | `NEXT_PUBLIC_SITE_URL` | 発行される Vercel の URL（例 `https://hutoukou.vercel.app`） |
+   | `ADMIN_EMAILS` | 管理者にするメール |
+4. Deploy
+
+### 4. 公開後
+- Google Search Console にサイトを登録し、`https://<あなたのドメイン>/sitemap.xml` を送信
+- 独自ドメインを使う場合は Vercel の Domains で設定し、`NEXT_PUBLIC_SITE_URL` を更新
+- **公開前後に足すべき**：メール認証・パスワード再設定（メール送信サービスが必要）
 
 ## 🛣 ロードマップ（今後の育て方）
 
