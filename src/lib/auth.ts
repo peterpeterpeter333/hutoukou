@@ -61,6 +61,28 @@ export function isValidEmail(email: string): boolean {
   return emailRe.test(email);
 }
 
+// ---- ワンタイムトークン（メール確認 / パスワード再設定） ----
+
+/** トークンを発行して保存し、トークン文字列を返す。 */
+export async function createToken(userId: string, type: "verify" | "reset", ttlMs: number): Promise<string> {
+  const token = randomBytes(32).toString("hex");
+  await prisma.token.create({
+    data: { id: token, userId, type, expiresAt: new Date(Date.now() + ttlMs) },
+  });
+  return token;
+}
+
+/** トークンを検証して消費（削除）し、対象userIdを返す。無効なら null。 */
+export async function consumeToken(token: string, type: "verify" | "reset"): Promise<string | null> {
+  if (!token) return null;
+  const rec = await prisma.token.findUnique({ where: { id: token } });
+  if (!rec || rec.type !== type) return null;
+  // 使い切り：見つけたら必ず削除
+  await prisma.token.delete({ where: { id: token } }).catch(() => {});
+  if (rec.expiresAt.getTime() < Date.now()) return null;
+  return rec.userId;
+}
+
 // よく使われる/推測されやすいパスワード（総当たりで最初に試される）
 const COMMON_PASSWORDS = new Set([
   "password", "password1", "password123", "passw0rd", "12345678", "123456789",

@@ -53,7 +53,13 @@ export default async function LoginPage({
         <button type="submit" className="btn btn-primary w-full">ログイン</button>
       </form>
 
-      <p className="mt-5 text-center text-sm text-[var(--muted)]">
+      <p className="mt-3 text-center text-sm">
+        <Link href="/forgot" className="text-[var(--muted)] hover:underline">
+          パスワードをお忘れですか？
+        </Link>
+      </p>
+
+      <p className="mt-4 text-center text-sm text-[var(--muted)]">
         はじめての方は{" "}
         <Link href="/register" className="font-medium text-[var(--color-brand-dark)] hover:underline">
           新規登録

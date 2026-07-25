@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getUserByHandle } from "@/lib/queries";
 import { getCurrentUser } from "@/lib/session";
-import { saveProfile } from "@/lib/actions";
+import { saveProfile, resendVerification } from "@/lib/actions";
 import { timeAgo } from "@/lib/site";
 import { Avatar, RoleBadge } from "@/components/ui";
 import { QuestionCard } from "@/components/QuestionCard";
@@ -23,18 +23,42 @@ export async function generateMetadata({
 
 export default async function ProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ handle: string }>;
+  searchParams: Promise<{ verify?: string }>;
 }) {
   const { handle } = await params;
+  const { verify } = await searchParams;
   const u = await getUserByHandle(handle);
   if (!u) notFound();
 
   const me = await getCurrentUser();
   const isMe = me?.id === u.id;
+  const needsVerify = isMe && !!u.email && !u.emailVerified;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
+      {needsVerify && (
+        <div className="mb-4 rounded-xl bg-[var(--color-accent-soft)] p-4 text-sm text-[#8a4632]">
+          <div className="font-semibold">✉️ メールアドレスの確認が済んでいません</div>
+          <p className="mt-1">
+            登録メール（{u.email}）宛に確認リンクをお送りしています。届いていない場合は再送できます。
+          </p>
+          {verify === "sent" && <p className="mt-1 font-medium text-[var(--color-brand-dark)]">確認メールを再送しました。</p>}
+          {verify === "limit" && <p className="mt-1 font-medium">再送の回数が多すぎます。しばらくお待ちください。</p>}
+          <form action={resendVerification} className="mt-2">
+            <button type="submit" className="btn btn-soft !py-1.5 text-sm">確認メールを再送する</button>
+          </form>
+        </div>
+      )}
+
+      {isMe && u.emailVerified && verify !== "sent" && (
+        <div className="mb-4 rounded-xl bg-[var(--color-brand-soft)] px-4 py-2 text-sm text-[var(--color-brand-dark)]">
+          ✅ メールアドレス確認済み
+        </div>
+      )}
+
       <div className="card p-6">
         <div className="flex items-center gap-4">
           <Avatar name={u.displayName} handle={u.handle} size={56} />

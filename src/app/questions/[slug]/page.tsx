@@ -10,6 +10,7 @@ import { VoteButton } from "@/components/VoteButton";
 import { IdentityFields } from "@/components/IdentityFields";
 import { ModActions } from "@/components/ModActions";
 import { Comments } from "@/components/Comments";
+import { ShareButtons } from "@/components/ShareButtons";
 import { postAnswer } from "@/lib/actions";
 
 export const dynamic = "force-dynamic";
@@ -171,7 +172,8 @@ export default async function QuestionPage({
           />
         </div>
 
-        <div className="mt-3 flex justify-end">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <ShareButtons path={`/questions/${q.slug}`} title={q.title} />
           <ModActions
             type="question"
             id={q.id}

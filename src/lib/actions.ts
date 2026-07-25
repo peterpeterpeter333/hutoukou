@@ -13,10 +13,25 @@ import {
   getAuthUser,
   isValidEmail,
   validatePassword,
+  createToken,
+  consumeToken,
 } from "./auth";
 import { getClientIp, isBlocked, bump, resetLimit } from "./ratelimit";
 import { createNotification } from "./notify";
+import { sendVerificationEmail, sendResetEmail } from "./email";
 import { slugify, circleSlugify } from "./slug";
+
+const HOUR = 60 * 60 * 1000;
+
+// 確認メールを送る（失敗しても登録は妨げない）
+async function dispatchVerification(userId: string, email: string): Promise<void> {
+  try {
+    const token = await createToken(userId, "verify", 24 * HOUR);
+    await sendVerificationEmail(email, token);
+  } catch (e) {
+    console.error("[verify email]", e);
+  }
+}
 
 const MIN = 60 * 1000;
 
@@ -302,7 +317,74 @@ export async function registerUser(formData: FormData) {
   }
 
   await applyAdminFlag(user.id, email);
+  await dispatchVerification(user.id, email);
   await createSession(user.id);
+  redirect(`/u/${user.handle}`);
+}
+
+// ---- 確認メールを再送 ----
+export async function resendVerification() {
+  const user = await getAuthUser();
+  if (!user || !user.email || user.emailVerified) redirect("/");
+  const ip = await getClientIp();
+  if (await isBlocked(`verifysend:ip:${ip}`, 5)) redirect(`/u/${user.handle}?verify=limit`);
+  await bump(`verifysend:ip:${ip}`, HOUR);
+  await dispatchVerification(user.id, user.email);
+  redirect(`/u/${user.handle}?verify=sent`);
+}
+
+// ---- メール確認（トークンを検証） ----
+export async function confirmEmail(token: string): Promise<boolean> {
+  const userId = await consumeToken(token, "verify");
+  if (!userId) return false;
+  await prisma.user.update({ where: { id: userId }, data: { emailVerified: new Date() } });
+  return true;
+}
+
+// ---- パスワード再設定メールを要求 ----
+export async function requestPasswordReset(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const ip = await getClientIp();
+  // 送信スパム対策
+  if (!(await isBlocked(`resetreq:ip:${ip}`, 5))) {
+    await bump(`resetreq:ip:${ip}`, HOUR);
+    const user = email ? await prisma.user.findUnique({ where: { email } }) : null;
+    if (user && user.passwordHash) {
+      try {
+        const token = await createToken(user.id, "reset", HOUR);
+        await sendResetEmail(email, token);
+      } catch (e) {
+        console.error("[reset email]", e);
+      }
+    }
+  }
+  // メールの存在有無を漏らさないため、常に同じ結果へ
+  redirect("/forgot?sent=1");
+}
+
+// ---- パスワード再設定を実行 ----
+export async function resetPassword(formData: FormData) {
+  const token = String(formData.get("token") ?? "");
+  const password = String(formData.get("password") ?? "");
+
+  // パスワード検証はトークン消費より前に（弱いだけでトークンを無駄にしない）
+  const pwError = validatePassword(password);
+  if (pwError) redirect(`/reset?error=password&token=${encodeURIComponent(token)}`);
+
+  const userId = await consumeToken(token, "reset");
+  if (!userId) redirect("/reset?error=invalid");
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) redirect("/reset?error=invalid");
+
+  const passwordHash = await hashPassword(password);
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash, emailVerified: user.emailVerified ?? new Date() },
+  });
+  // 既存セッションを無効化（安全のため）してから新規ログイン
+  await prisma.session.deleteMany({ where: { userId } });
+  await createSession(userId);
   redirect(`/u/${user.handle}`);
 }
 
