@@ -22,7 +22,7 @@ export async function getQuestions(opts: {
 } = {}): Promise<QuestionListItem[]> {
   const { sort = "recent", take = 20, skip = 0, tagSlug, circleSlug, query } = opts;
 
-  const where: Prisma.QuestionWhereInput = {};
+  const where: Prisma.QuestionWhereInput = { hidden: false };
   if (tagSlug) where.tags = { some: { tag: { slug: tagSlug } } };
   if (circleSlug) where.circle = { slug: circleSlug };
   if (query) {
@@ -54,6 +54,7 @@ export async function getQuestionBySlug(slug: string) {
       tags: { include: { tag: true } },
       _count: { select: { votes: true } },
       answers: {
+        where: { hidden: false },
         orderBy: [{ isAccepted: "desc" }, { votes: { _count: "desc" } }, { createdAt: "asc" }],
         include: {
           author: true,
@@ -91,16 +92,17 @@ export async function getCircleBySlug(slug: string) {
 // タイムライン（トップレベル投稿＋返信）を取得
 export async function getCircleTimeline(circleId: string) {
   return prisma.circlePost.findMany({
-    where: { circleId, parentId: null },
+    where: { circleId, parentId: null, hidden: false },
     orderBy: { createdAt: "desc" },
     take: 50,
     include: {
       author: true,
       replies: {
+        where: { hidden: false },
         orderBy: { createdAt: "asc" },
         include: { author: true },
       },
-      _count: { select: { replies: true } },
+      _count: { select: { replies: { where: { hidden: false } } } },
     },
   });
 }
@@ -128,6 +130,49 @@ export async function getStats() {
   return { questions, answers, users, circles };
 }
 
+// ---- モデレーション ----
+
+export async function getReports(status: "open" | "resolved" | "dismissed" | "all" = "open") {
+  const reports = await prisma.report.findMany({
+    where: status === "all" ? {} : { status },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+    include: { reporter: true },
+  });
+
+  // 通報対象の中身を取得して添える
+  const withTargets = await Promise.all(
+    reports.map(async (r) => {
+      let preview: { text: string; author: string; hidden: boolean; link: string } | null = null;
+      if (r.targetType === "question") {
+        const q = await prisma.question.findUnique({
+          where: { id: r.targetId },
+          include: { author: true },
+        });
+        if (q) preview = { text: `${q.title}\n${q.body}`, author: q.author.displayName, hidden: q.hidden, link: `/questions/${q.slug}` };
+      } else if (r.targetType === "answer") {
+        const a = await prisma.answer.findUnique({
+          where: { id: r.targetId },
+          include: { author: true, question: true },
+        });
+        if (a) preview = { text: a.body, author: a.author.displayName, hidden: a.hidden, link: `/questions/${a.question.slug}#answers` };
+      } else if (r.targetType === "post") {
+        const p = await prisma.circlePost.findUnique({
+          where: { id: r.targetId },
+          include: { author: true, circle: true },
+        });
+        if (p) preview = { text: p.body, author: p.author.displayName, hidden: p.hidden, link: `/circles/${p.circle.slug}?tab=timeline` };
+      }
+      return { ...r, preview };
+    })
+  );
+  return withTargets;
+}
+
+export async function getOpenReportCount(): Promise<number> {
+  return prisma.report.count({ where: { status: "open" } });
+}
+
 export async function getUnreadNotificationCount(userId: string): Promise<number> {
   return prisma.notification.count({ where: { userId, read: false } });
 }
@@ -146,10 +191,12 @@ export async function getUserByHandle(handle: string) {
     where: { handle },
     include: {
       questions: {
+        where: { hidden: false },
         orderBy: { createdAt: "desc" },
         include: listInclude,
       },
       answers: {
+        where: { hidden: false },
         orderBy: { createdAt: "desc" },
         include: { question: true, _count: { select: { votes: true } } },
       },

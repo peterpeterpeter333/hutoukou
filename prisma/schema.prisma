@@ -20,6 +20,7 @@ model User {
   bio          String?
   email        String?  @unique // 本登録時のみ
   passwordHash String? // 本登録時のみ（bcrypt）
+  isAdmin      Boolean  @default(false) // モデレーター権限
   createdAt    DateTime @default(now())
 
   questions   Question[]
@@ -31,6 +32,7 @@ model User {
 
   notifications      Notification[] @relation("Recipient") // 受け取った通知
   actedNotifications Notification[] @relation("Actor") // 自分が起こした通知
+  reports            Report[]       @relation("Reporter") // 自分がした通報
 }
 
 /// ログインセッション（ランダムトークン。cookieにはこのidを保存）
@@ -49,6 +51,23 @@ model RateLimit {
   key       String   @id // 例: "login:ip:1.2.3.4" / "login:email:x@x"
   count     Int      @default(0)
   windowEnd DateTime
+}
+
+/// 通報（不適切なコンテンツの報告）
+model Report {
+  id         String    @id @default(cuid())
+  reporterId String? // 通報者（匿名可）
+  reporter   User?     @relation("Reporter", fields: [reporterId], references: [id], onDelete: SetNull)
+  targetType String // question | answer | post
+  targetId   String
+  reason     String // spam | harassment | selfharm | inappropriate | other
+  detail     String?
+  status     String    @default("open") // open | resolved | dismissed
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  @@index([status])
+  @@index([targetType, targetId])
 }
 
 /// 通知（自分の質問に回答、投稿に返信 など）
@@ -78,6 +97,7 @@ model Question {
   circleId  String?
   circle    Circle?  @relation(fields: [circleId], references: [id])
   views     Int      @default(0)
+  hidden    Boolean  @default(false) // モデレーションで非表示
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -95,6 +115,7 @@ model Answer {
   authorId   String
   author     User     @relation(fields: [authorId], references: [id])
   isAccepted Boolean  @default(false)
+  hidden     Boolean  @default(false) // モデレーションで非表示
   createdAt  DateTime @default(now())
 
   votes Vote[]
@@ -165,6 +186,7 @@ model CirclePost {
   circle    Circle   @relation(fields: [circleId], references: [id], onDelete: Cascade)
   authorId  String
   author    User     @relation(fields: [authorId], references: [id])
+  hidden    Boolean  @default(false) // モデレーションで非表示
   createdAt DateTime @default(now())
 
   // 返信（スレッド）: 親投稿への自己参照

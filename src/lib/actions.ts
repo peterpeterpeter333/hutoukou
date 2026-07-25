@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { prisma } from "./db";
-import { ensureUser } from "./session";
+import { ensureUser, getCurrentUser } from "./session";
 import {
   hashPassword,
   verifyPassword,
@@ -19,6 +19,31 @@ import { createNotification } from "./notify";
 import { slugify, circleSlugify } from "./slug";
 
 const MIN = 60 * 1000;
+
+// ADMIN_EMAILS（カンマ区切り）に一致するユーザーへ管理者権限を付与
+async function applyAdminFlag(userId: string, email: string): Promise<void> {
+  const admins = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  if (admins.includes(email.toLowerCase())) {
+    await prisma.user.update({ where: { id: userId }, data: { isAdmin: true } });
+  }
+}
+
+// コンテンツの非表示/復帰
+async function setHidden(type: string, id: string, hidden: boolean): Promise<void> {
+  if (type === "question") await prisma.question.update({ where: { id }, data: { hidden } });
+  else if (type === "answer") await prisma.answer.update({ where: { id }, data: { hidden } });
+  else if (type === "post") await prisma.circlePost.update({ where: { id }, data: { hidden } });
+}
+
+// 管理者のみ許可（そうでなければトップへ）
+async function requireAdmin() {
+  const u = await getAuthUser();
+  if (!u || !u.isAdmin) redirect("/");
+  return u;
+}
 
 function tagNameToSlug(name: string): string {
   const ascii = name
@@ -275,6 +300,7 @@ export async function registerUser(formData: FormData) {
     });
   }
 
+  await applyAdminFlag(user.id, email);
   await createSession(user.id);
   redirect(`/u/${user.handle}`);
 }
@@ -302,6 +328,7 @@ export async function loginUser(formData: FormData) {
 
   // 成功したらメールの失敗カウンタをリセット
   await resetLimit(emailKey);
+  await applyAdminFlag(user.id, email);
   await createSession(user.id);
   redirect(`/u/${user.handle}`);
 }
@@ -339,4 +366,118 @@ export async function updateAccount(formData: FormData) {
     },
   });
   revalidatePath(`/u/${user.handle}`);
+}
+
+// ===== 通報・モデレーション =====
+
+const REPORT_REASONS = new Set(["spam", "harassment", "selfharm", "inappropriate", "other"]);
+const AUTO_HIDE_THRESHOLD = 3; // この件数の通報で自動的に非表示（要確認）
+
+// ---- コンテンツを通報 ----
+export async function reportContent(formData: FormData) {
+  const targetType = String(formData.get("targetType") ?? "");
+  const targetId = String(formData.get("targetId") ?? "");
+  const reason = String(formData.get("reason") ?? "other");
+  const detail = String(formData.get("detail") ?? "").trim().slice(0, 500);
+  const from = String(formData.get("from") ?? "/");
+
+  if (!["question", "answer", "post"].includes(targetType) || !targetId) redirect(from);
+  const safeReason = REPORT_REASONS.has(reason) ? reason : "other";
+
+  // 通報スパム対策（同一IPで1時間に20件まで）
+  const ip = await getClientIp();
+  if (await isBlocked(`report:ip:${ip}`, 20)) redirect(`${from}?reported=limit`);
+  await bump(`report:ip:${ip}`, 60 * MIN);
+
+  const user = await ensureUser();
+
+  // 同じ人が同じ対象を重複通報しない
+  const dup = await prisma.report.findFirst({
+    where: { reporterId: user.id, targetId, status: "open" },
+  });
+  if (dup) redirect(`${from}?reported=1`);
+
+  await prisma.report.create({
+    data: {
+      reporterId: user.id,
+      targetType,
+      targetId,
+      reason: safeReason,
+      detail: detail || null,
+    },
+  });
+
+  // 一定数の通報が集まったら自動的に非表示（モデレーターの確認待ち）
+  const openCount = await prisma.report.count({ where: { targetId, status: "open" } });
+  if (openCount >= AUTO_HIDE_THRESHOLD) {
+    await setHidden(targetType, targetId, true);
+  }
+
+  redirect(`${from}?reported=1`);
+}
+
+// ---- 自分の投稿を削除（本人または管理者） ----
+export async function deleteQuestion(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const user = await getCurrentUser();
+  const q = await prisma.question.findUnique({ where: { id }, select: { authorId: true } });
+  if (!user || !q) redirect("/");
+  if (q.authorId !== user.id && !user.isAdmin) redirect("/");
+  await prisma.question.delete({ where: { id } });
+  revalidatePath("/");
+  redirect("/questions");
+}
+
+export async function deleteAnswer(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  const user = await getCurrentUser();
+  const a = await prisma.answer.findUnique({ where: { id }, select: { authorId: true } });
+  if (!user || !a) redirect(`/questions/${slug}`);
+  if (a.authorId !== user.id && !user.isAdmin) redirect(`/questions/${slug}`);
+  await prisma.answer.delete({ where: { id } });
+  revalidatePath(`/questions/${slug}`);
+  redirect(`/questions/${slug}#answers`);
+}
+
+export async function deleteCirclePost(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  const user = await getCurrentUser();
+  const p = await prisma.circlePost.findUnique({ where: { id }, select: { authorId: true } });
+  if (!user || !p) redirect(`/circles/${slug}`);
+  if (p.authorId !== user.id && !user.isAdmin) redirect(`/circles/${slug}`);
+  await prisma.circlePost.delete({ where: { id } });
+  revalidatePath(`/circles/${slug}`);
+  redirect(`/circles/${slug}?tab=timeline`);
+}
+
+// ---- モデレーション（管理者のみ）：非表示/復帰 ----
+export async function moderateHide(formData: FormData) {
+  await requireAdmin();
+  const type = String(formData.get("type") ?? "");
+  const id = String(formData.get("id") ?? "");
+  const hidden = String(formData.get("hidden") ?? "true") === "true";
+  const reportId = String(formData.get("reportId") ?? "");
+  await setHidden(type, id, hidden);
+  // 対象の通報を対応済みにする
+  await prisma.report.updateMany({
+    where: { targetId: id, status: "open" },
+    data: { status: "resolved", resolvedAt: new Date() },
+  });
+  if (reportId) revalidatePath("/moderation");
+  revalidatePath("/moderation");
+}
+
+// ---- モデレーション（管理者のみ）：通報を対応済み/却下 ----
+export async function resolveReport(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  const status = String(formData.get("status") ?? "dismissed");
+  const safe = ["resolved", "dismissed"].includes(status) ? status : "dismissed";
+  await prisma.report.update({
+    where: { id },
+    data: { status: safe, resolvedAt: new Date() },
+  });
+  revalidatePath("/moderation");
 }

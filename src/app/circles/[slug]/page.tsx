@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { timeAgo, absoluteUrl } from "@/lib/site";
 import { Avatar, RoleBadge } from "@/components/ui";
 import { QuestionCard } from "@/components/QuestionCard";
+import { ModActions } from "@/components/ModActions";
 import { toggleJoinCircle, postToCircle } from "@/lib/actions";
 
 export const dynamic = "force-dynamic";
@@ -159,6 +160,16 @@ export default async function CirclePage({
                           <span className="text-xs text-[var(--muted)]">・{timeAgo(r.createdAt)}</span>
                         </div>
                         <p className="prose-jp mt-1 text-sm">{r.body}</p>
+                        <div className="mt-1">
+                          <ModActions
+                            type="post"
+                            id={r.id}
+                            slug={c.slug}
+                            from={`/circles/${c.slug}?tab=timeline`}
+                            canDelete={!!user && (user.id === r.authorId || user.isAdmin)}
+                            small
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -198,6 +209,17 @@ export default async function CirclePage({
                     </div>
                   </form>
                 </details>
+
+                <div className="mt-2 flex justify-end">
+                  <ModActions
+                    type="post"
+                    id={p.id}
+                    slug={c.slug}
+                    from={`/circles/${c.slug}?tab=timeline`}
+                    canDelete={!!user && (user.id === p.authorId || user.isAdmin)}
+                    small
+                  />
+                </div>
               </article>
             ))}
           </div>

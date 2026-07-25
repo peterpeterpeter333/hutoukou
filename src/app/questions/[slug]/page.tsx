@@ -8,6 +8,7 @@ import { timeAgo, absoluteUrl, SITE } from "@/lib/site";
 import { Avatar, RoleBadge, Tag } from "@/components/ui";
 import { VoteButton } from "@/components/VoteButton";
 import { IdentityFields } from "@/components/IdentityFields";
+import { ModActions } from "@/components/ModActions";
 import { postAnswer } from "@/lib/actions";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const q = await getQuestionBySlug(slug);
   if (!q) return { title: "質問が見つかりません" };
+  if (q.hidden) return { title: "質問", robots: { index: false, follow: false } };
   const desc = q.body.replace(/\s+/g, " ").slice(0, 110);
   return {
     title: q.title,
@@ -36,17 +38,25 @@ export async function generateMetadata({
 
 export default async function QuestionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ reported?: string }>;
 }) {
   const { slug } = await params;
+  const { reported } = await searchParams;
   const q = await getQuestionBySlug(slug);
   if (!q) notFound();
+
+  const user = await getCurrentUser();
+
+  // 非表示（モデレーション済み）の質問は、本人・管理者以外には見せない
+  if (q.hidden && !(user && (user.id === q.authorId || user.isAdmin))) notFound();
 
   // 閲覧数（エラーは無視）
   incrementViews(q.id).catch(() => {});
 
-  const user = await getCurrentUser();
+  const here = `/questions/${q.slug}`;
   const answerIds = q.answers.map((a) => a.id);
   const myVotes = user
     ? await prisma.vote.findMany({
@@ -106,6 +116,20 @@ export default async function QuestionPage({
         <Link href="/questions" className="hover:underline">質問</Link>
       </nav>
 
+      {reported && (
+        <p className="mb-4 rounded-xl bg-[var(--color-brand-soft)] px-4 py-3 text-sm text-[var(--color-brand-dark)]">
+          {reported === "limit"
+            ? "通報が多すぎます。しばらくしてからお試しください。"
+            : "通報を受け付けました。ご協力ありがとうございます。運営が確認します。"}
+        </p>
+      )}
+
+      {q.hidden && (
+        <p className="mb-4 rounded-xl bg-[var(--color-accent-soft)] px-4 py-3 text-sm text-[#c15b3f]">
+          この質問は通報により現在非表示です（本人・管理者のみ表示）。
+        </p>
+      )}
+
       {/* 質問 */}
       <article className="card p-6">
         <div className="flex items-center gap-2 text-xs text-[var(--muted)]">
@@ -145,6 +169,15 @@ export default async function QuestionPage({
             voted={votedQuestion}
           />
         </div>
+
+        <div className="mt-3 flex justify-end">
+          <ModActions
+            type="question"
+            id={q.id}
+            from={here}
+            canDelete={!!user && (user.id === q.authorId || user.isAdmin)}
+          />
+        </div>
       </article>
 
       {/* 回答 */}
@@ -173,12 +206,22 @@ export default async function QuestionPage({
                   <RoleBadge role={a.author.role} />
                   <span className="text-xs text-[var(--muted)]">・{timeAgo(a.createdAt)}</span>
                 </div>
-                <VoteButton
-                  count={a._count.votes}
-                  answerId={a.id}
-                  slug={q.slug}
-                  voted={votedAnswers.has(a.id)}
-                />
+                <div className="flex items-center gap-3">
+                  <ModActions
+                    type="answer"
+                    id={a.id}
+                    slug={q.slug}
+                    from={here}
+                    canDelete={!!user && (user.id === a.authorId || user.isAdmin)}
+                    small
+                  />
+                  <VoteButton
+                    count={a._count.votes}
+                    answerId={a.id}
+                    slug={q.slug}
+                    voted={votedAnswers.has(a.id)}
+                  />
+                </div>
               </div>
             </article>
           ))}

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getAuthUser } from "@/lib/auth";
 import { getCurrentUser } from "@/lib/session";
-import { getUnreadNotificationCount } from "@/lib/queries";
+import { getUnreadNotificationCount, getOpenReportCount } from "@/lib/queries";
 import { logoutUser } from "@/lib/actions";
 import { SITE } from "@/lib/site";
 import { Avatar } from "./ui";
@@ -10,6 +10,7 @@ export async function Header() {
   const user = await getAuthUser();
   const current = await getCurrentUser();
   const unread = current ? await getUnreadNotificationCount(current.id) : 0;
+  const openReports = user?.isAdmin ? await getOpenReportCount() : 0;
 
   return (
     <header className="sticky top-0 z-40 border-b bg-[color-mix(in_srgb,var(--bg)_88%,transparent)] backdrop-blur">
@@ -53,6 +54,22 @@ export async function Header() {
               {unread > 0 && (
                 <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-[18px] items-center justify-center rounded-full bg-[var(--color-accent)] px-1 text-[0.65rem] font-bold leading-[18px] text-white">
                   {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </Link>
+          )}
+
+          {user?.isAdmin && (
+            <Link
+              href="/moderation"
+              className="relative rounded-full p-2 hover:bg-[var(--color-brand-soft)]"
+              title="モデレーション"
+              aria-label={`モデレーション${openReports > 0 ? `（未対応${openReports}件）` : ""}`}
+            >
+              <span aria-hidden className="text-lg">🛡</span>
+              {openReports > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-[18px] items-center justify-center rounded-full bg-[var(--color-accent)] px-1 text-[0.65rem] font-bold leading-[18px] text-white">
+                  {openReports > 9 ? "9+" : openReports}
                 </span>
               )}
             </Link>
