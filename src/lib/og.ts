@@ -28,15 +28,11 @@ export async function loadJPFont(
     `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@${weight}` +
     `&text=${encodeURIComponent(uniq)}`;
 
-  const cssRes = await fetch(url, {
-    headers: {
-      // 古めのUAにすると Google が truetype を返す（woff2 を避ける）
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0",
-    },
-  });
+  // UAを付けない（Node既定）ことで Google は satori が扱える truetype/woff を返す。
+  // ※ woff2 は satori が非対応なので、format が truetype/opentype/woff のURLを拾う。
+  const cssRes = await fetch(url);
   const css = await cssRes.text();
-  const match = css.match(/src:\s*url\((.+?)\)\s*format\('(?:opentype|truetype)'\)/);
+  const match = css.match(/src:\s*url\((.+?)\)\s*format\('(?:opentype|truetype|woff)'\)/);
   if (!match) throw new Error("OGフォントの取得に失敗しました");
 
   const fontRes = await fetch(match[1]);

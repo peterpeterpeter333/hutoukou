@@ -3,6 +3,8 @@ import { SITE } from "@/lib/site";
 import { BRAND, loadJPFont } from "@/lib/og";
 
 export const runtime = "nodejs";
+// ビルド時ではなくアクセス時に生成する（ビルドがフォント取得に依存しないように）
+export const dynamic = "force-dynamic";
 export const alt = `${SITE.name}｜${SITE.tagline}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";

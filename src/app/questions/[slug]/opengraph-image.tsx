@@ -4,6 +4,8 @@ import { SITE } from "@/lib/site";
 import { BRAND, loadJPFont } from "@/lib/og";
 
 export const runtime = "nodejs";
+// ビルド時に全質問ぶんを生成しないよう、アクセス時に生成する
+export const dynamic = "force-dynamic";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = SITE.name;
