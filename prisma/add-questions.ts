@@ -14,8 +14,8 @@ function tagSlug(name: string, i: number): string {
 }
 
 async function pickAuthor(role: string): Promise<string> {
-  const existing = await prisma.user.findFirst({ where: { role } });
-  if (existing) return existing.id;
+  const users = await prisma.user.findMany({ where: { role }, select: { id: true } });
+  if (users.length) return users[Math.floor(Math.random() * users.length)].id; // 役割の中からランダムに散らす
   const u = await prisma.user.create({
     data: { handle: `tobira-x-${role}-${Math.random().toString(36).slice(2, 7)}`, displayName: "とびらの仲間", role },
   });
