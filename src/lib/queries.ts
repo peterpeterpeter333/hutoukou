@@ -232,3 +232,20 @@ export async function getEntryReports(filter: "open" | "resolved" | "all" = "ope
     take: 200,
   });
 }
+
+// 支援先のユーザー投稿（管理画面用）
+export async function getSubmissions(filter: "pending" | "approved" | "rejected" | "all" = "pending") {
+  return prisma.entrySubmission.findMany({
+    where: filter === "all" ? {} : { status: filter },
+    orderBy: { createdAt: "desc" },
+    take: 200,
+  });
+}
+
+// 承認済みの投稿（一覧に合流させる用）
+export async function getApprovedSubmissions() {
+  return prisma.entrySubmission.findMany({
+    where: { status: "approved" },
+    orderBy: { createdAt: "desc" },
+  });
+}

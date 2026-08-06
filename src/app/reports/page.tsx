@@ -46,7 +46,7 @@ export default async function ReportsPage({
     <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="flex items-center justify-between">
         <h1 className="font-round text-2xl font-bold">🚩 掲載情報の報告</h1>
-        <Link href="/moderation" className="text-sm text-[var(--muted)] hover:underline">通報モデレーションへ →</Link>
+        <Link href="/submissions" className="text-sm text-[var(--color-brand-dark)] hover:underline">📥 支援先の投稿へ →</Link>
       </div>
       <p className="mt-1 text-sm text-[var(--muted)]">
         支援先一覧（/tools/shien）に寄せられた「間違いを報告」の一覧です。

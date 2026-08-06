@@ -37,6 +37,7 @@ export type DirectoryEntry = {
   source?: string; // 出典URL（データの根拠）
   sourceName?: string; // 出典の名前
   verify?: boolean; // 情報の確認が必要（※要確認タグ表示）
+  community?: boolean; // 利用者の投稿（承認済み）
 };
 
 // データは src/data/supports.json に集約（公開情報をもとに作成）。

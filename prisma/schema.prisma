@@ -240,3 +240,23 @@ model EntryReport {
 
   @@index([status])
 }
+
+// 支援先の「ユーザー投稿」（ログインユーザーが投稿 → 管理者承認 → 一覧に自動掲載）
+model EntrySubmission {
+  id              String    @id @default(cuid())
+  name            String
+  type            String // 相談窓口 | 教育支援センター | 学びの多様化学校 | フリースクール | 親の会
+  region          String // 全国 or 都道府県
+  city            String?
+  online          Boolean   @default(false)
+  url             String?
+  tel             String?
+  note            String?
+  submittedById   String? // 投稿者(ユーザー)のid（参照のみ・FKなし）
+  submittedByName String?
+  status          String    @default("pending") // pending | approved | rejected
+  createdAt       DateTime  @default(now())
+  reviewedAt      DateTime?
+
+  @@index([status])
+}

@@ -2,6 +2,10 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { absoluteUrl } from "@/lib/site";
 import { DirectoryBrowser } from "@/components/DirectoryBrowser";
+import { ENTRIES, type DirectoryEntry, type EntryType, type Region } from "@/lib/directory";
+import { getApprovedSubmissions } from "@/lib/queries";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "不登校の支援先を探す（フリースクール・相談窓口 一覧）",
@@ -16,7 +20,23 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ShienPage() {
+export default async function ShienPage() {
+  // 承認済みのユーザー投稿を、公式データ(JSON)に合流させる
+  const approved = await getApprovedSubmissions().catch(() => []);
+  const community: DirectoryEntry[] = approved.map((s) => ({
+    id: `sub-${s.id}`,
+    name: s.name,
+    type: s.type as EntryType,
+    region: s.region as Region,
+    online: s.online,
+    city: s.city ?? undefined,
+    url: s.url ?? undefined,
+    tel: s.tel ?? undefined,
+    note: s.note ?? undefined,
+    community: true,
+  }));
+  const entries = [...ENTRIES, ...community];
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <nav className="mb-4 text-sm text-[var(--muted)]">
@@ -41,8 +61,12 @@ export default function ShienPage() {
         からお願いします。
       </div>
 
-      <div className="mt-6">
-        <DirectoryBrowser />
+      <div className="mt-5 flex justify-end">
+        <Link href="/tools/shien/add" className="btn btn-soft !py-1.5 text-sm">＋ 支援先を追加する</Link>
+      </div>
+
+      <div className="mt-2">
+        <DirectoryBrowser entries={entries} />
       </div>
 
       {/* とびらへの導線 */}

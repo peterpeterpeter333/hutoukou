@@ -665,3 +665,43 @@ export async function resolveEntryReport(formData: FormData) {
   if (id) await prisma.entryReport.update({ where: { id }, data: { status: "resolved", resolvedAt: new Date() } });
   revalidatePath("/reports");
 }
+
+// ---- 支援先を投稿（ログインユーザーのみ・承認待ちで保存） ----
+export async function submitEntry(formData: FormData) {
+  const user = await getAuthUser();
+  if (!user) redirect("/login?next=/tools/shien/add");
+
+  const name = String(formData.get("name") ?? "").trim().slice(0, 120);
+  const type = String(formData.get("type") ?? "").trim();
+  const region = String(formData.get("region") ?? "").trim();
+  const city = String(formData.get("city") ?? "").trim().slice(0, 60) || null;
+  const online = String(formData.get("online") ?? "") === "on";
+  const url = String(formData.get("url") ?? "").trim().slice(0, 300) || null;
+  const tel = String(formData.get("tel") ?? "").trim().slice(0, 40) || null;
+  const note = String(formData.get("note") ?? "").trim().slice(0, 500) || null;
+
+  const TYPES = ["相談窓口", "教育支援センター", "学びの多様化学校", "フリースクール", "親の会"];
+  if (String(formData.get("website") ?? "")) redirect("/tools/shien/add?sent=1"); // ハニーポット
+  if (name.length < 2 || !TYPES.includes(type) || !region) redirect("/tools/shien/add?error=empty");
+
+  const ip = await getClientIp();
+  const key = `submitentry:${user.id}:${ip}`;
+  if (await isBlocked(key, 20)) redirect("/tools/shien/add?error=limit");
+  await bump(key, 24 * HOUR);
+
+  await prisma.entrySubmission.create({
+    data: { name, type, region, city, online, url, tel, note, submittedById: user.id, submittedByName: user.displayName },
+  });
+  redirect("/tools/shien/add?sent=1");
+}
+
+// ---- 投稿の承認 / 却下（管理者のみ） ----
+export async function reviewSubmission(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  const action = String(formData.get("action") ?? "");
+  const status = action === "approve" ? "approved" : "rejected";
+  if (id) await prisma.entrySubmission.update({ where: { id }, data: { status, reviewedAt: new Date() } });
+  revalidatePath("/submissions");
+  revalidatePath("/tools/shien");
+}

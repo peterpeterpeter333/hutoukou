@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react";
 import {
-  ENTRIES,
   ENTRY_TYPES,
   REGIONS,
+  type DirectoryEntry,
   type EntryType,
   type Region,
 } from "@/lib/directory";
@@ -20,7 +20,7 @@ const TYPE_STYLE: Record<EntryType, string> = {
   親の会: "bg-[var(--color-brand-soft)] text-[var(--color-brand-dark)]",
 };
 
-export function DirectoryBrowser() {
+export function DirectoryBrowser({ entries }: { entries: DirectoryEntry[] }) {
   const [type, setType] = useState<"すべて" | EntryType>("すべて");
   const [region, setRegion] = useState<"すべて" | Region>("すべて");
   const [onlineOnly, setOnlineOnly] = useState(false);
@@ -28,7 +28,7 @@ export function DirectoryBrowser() {
 
   const results = useMemo(() => {
     const kw = q.trim();
-    return ENTRIES.filter((e) => {
+    return entries.filter((e) => {
       if (type !== "すべて" && e.type !== type) return false;
       // 地域で絞る場合、全国の窓口は常に含める（どこからでも使えるため）
       if (region !== "すべて" && e.region !== region && e.region !== "全国") return false;
@@ -41,7 +41,7 @@ export function DirectoryBrowser() {
       if (ra !== rb) return ra - rb; // 全国 → 都道府県順
       return a.name.localeCompare(b.name, "ja");
     });
-  }, [type, region, onlineOnly, q]);
+  }, [entries, type, region, onlineOnly, q]);
 
   return (
     <div>
@@ -95,6 +95,9 @@ export function DirectoryBrowser() {
                 <span className="rounded-full bg-[var(--color-brand-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--color-brand-dark)]">オンライン可</span>
               )}
               {e.official && <span className="text-xs text-[var(--muted)]">公的</span>}
+              {e.community && (
+                <span className="rounded-full bg-[var(--color-accent-soft)] px-2 py-0.5 text-xs font-semibold text-[#8a4632]">みんなの投稿</span>
+              )}
               {e.verify && (
                 <span className="rounded bg-[var(--color-accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold text-[#c15b3f]">※要確認</span>
               )}
