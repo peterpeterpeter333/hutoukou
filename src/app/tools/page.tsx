@@ -3,17 +3,24 @@ import type { Metadata } from "next";
 import { absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "お役立ちツール",
+  title: "お役立ち情報",
   description:
-    "不登校の子ども・保護者のためのお役立ちツール集。相談窓口の一覧など、困ったときに使える道具をまとめています。",
+    "不登校の子ども・保護者のためのお役立ち情報。進路の見取り図、支援先探し、相談窓口の一覧など、困ったときに役立つ情報をまとめています。",
   alternates: { canonical: absoluteUrl("/tools") },
 };
 
 // ツール一覧（増えたらここに足すだけ）
 const TOOLS = [
   {
-    href: "/tools/shien",
+    href: "/guide/shinro",
     emoji: "🧭",
+    title: "中学卒業後の進路の見取り図",
+    desc: "全日制・定時制・通信制・高卒認定・特例校…。違いを一望して、わが子に合う道を見つけられます。",
+    ready: true,
+  },
+  {
+    href: "/tools/shien",
+    emoji: "🗺",
     title: "不登校の支援先を探す",
     desc: "フリースクール・教育支援センター・特例校・相談窓口を、地域や種類で絞り込んで探せます。",
     ready: true,
@@ -30,9 +37,9 @@ const TOOLS = [
 export default function ToolsPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="font-round text-3xl font-bold">🧰 お役立ちツール</h1>
+      <h1 className="font-round text-3xl font-bold">🧰 お役立ち情報</h1>
       <p className="mt-3 text-[var(--muted)]">
-        不登校のことで困ったときに使える道具をまとめています。少しずつ増やしていきます。
+        不登校のことで困ったときに役立つ、進路ガイドや支援先・相談窓口をまとめています。少しずつ増やしていきます。
       </p>
 
       <div className="mt-6 grid gap-3">

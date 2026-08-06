@@ -91,6 +91,33 @@ export default async function Home() {
           </div>
         </section>
 
+        {/* お役立ち情報 */}
+        <section className="mt-10">
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="font-round text-xl font-bold">🧭 お役立ち情報</h2>
+            <Link href="/tools" className="text-sm text-[var(--color-brand-dark)] hover:underline">
+              すべて見る →
+            </Link>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Link href="/guide/shinro" className="card p-4 transition hover:shadow-sm">
+              <div className="text-2xl" aria-hidden>🧭</div>
+              <div className="mt-1 font-round font-bold">進路の見取り図</div>
+              <p className="mt-1 text-xs text-[var(--muted)]">通信制・定時制・高認・特例校…違いを一望</p>
+            </Link>
+            <Link href="/tools/shien" className="card p-4 transition hover:shadow-sm">
+              <div className="text-2xl" aria-hidden>🗺</div>
+              <div className="mt-1 font-round font-bold">支援先を探す</div>
+              <p className="mt-1 text-xs text-[var(--muted)]">フリースクール・特例校などを地域で検索</p>
+            </Link>
+            <Link href="/tools/soudan" className="card p-4 transition hover:shadow-sm">
+              <div className="text-2xl" aria-hidden>📞</div>
+              <div className="mt-1 font-round font-bold">相談窓口 一覧</div>
+              <p className="mt-1 text-xs text-[var(--muted)]">今すぐ話せる窓口・状況別の相談先</p>
+            </Link>
+          </div>
+        </section>
+
         <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_260px]">
           <div>
             {/* 注目の質問 */}

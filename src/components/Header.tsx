@@ -27,6 +27,9 @@ export async function Header() {
           <Link href="/circles" className="rounded-full px-3 py-1.5 hover:bg-[var(--color-brand-soft)]">
             サークル
           </Link>
+          <Link href="/tools" className="rounded-full px-3 py-1.5 hover:bg-[var(--color-brand-soft)]">
+            お役立ち
+          </Link>
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
