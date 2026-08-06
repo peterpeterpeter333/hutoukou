@@ -640,3 +640,28 @@ export async function submitContact(formData: FormData) {
   }
   redirect("/contact?sent=1");
 }
+
+// ---- 支援先一覧「間違いを報告」→ DBに保存（IPレート制限つき） ----
+export async function reportEntry(formData: FormData) {
+  const target = String(formData.get("target") ?? "").trim().slice(0, 200);
+  const message = String(formData.get("message") ?? "").trim().slice(0, 2000);
+
+  if (String(formData.get("website") ?? "")) redirect("/tools/shien/report?sent=1"); // ハニーポット
+  if (!target || message.length < 3) redirect(`/tools/shien/report?about=${encodeURIComponent(target)}&error=empty`);
+
+  const ip = await getClientIp();
+  const key = `entryreport:${ip}`;
+  if (await isBlocked(key, 10)) redirect(`/tools/shien/report?about=${encodeURIComponent(target)}&error=limit`);
+  await bump(key, HOUR);
+
+  await prisma.entryReport.create({ data: { target, message } });
+  redirect("/tools/shien/report?sent=1");
+}
+
+// ---- 報告を対応済みにする（管理者のみ） ----
+export async function resolveEntryReport(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  if (id) await prisma.entryReport.update({ where: { id }, data: { status: "resolved", resolvedAt: new Date() } });
+  revalidatePath("/reports");
+}

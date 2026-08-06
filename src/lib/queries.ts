@@ -223,3 +223,12 @@ export async function getUserByHandle(handle: string) {
     },
   });
 }
+
+// 支援先一覧の報告（管理者の報告画面用）
+export async function getEntryReports(filter: "open" | "resolved" | "all" = "open") {
+  return prisma.entryReport.findMany({
+    where: filter === "all" ? {} : { status: filter },
+    orderBy: { createdAt: "desc" },
+    take: 200,
+  });
+}

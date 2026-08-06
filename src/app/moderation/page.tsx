@@ -50,7 +50,7 @@ export default async function ModerationPage({
     <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="flex items-center justify-between">
         <h1 className="font-round text-2xl font-bold">🛡 モデレーション</h1>
-        <span className="text-sm text-[var(--muted)]">管理者：{admin.displayName}</span>
+        <Link href="/reports" className="text-sm text-[var(--color-brand-dark)] hover:underline">🚩 掲載情報の報告へ →</Link>
       </div>
 
       <div className="mt-4 flex gap-2 border-b">

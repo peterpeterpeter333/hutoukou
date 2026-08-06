@@ -124,7 +124,7 @@ export function DirectoryBrowser() {
                 </a>
               )}
               <a
-                href={`/contact?about=${encodeURIComponent(`${e.name}（${e.region}${e.city ? ` ${e.city}` : ""}）`)}`}
+                href={`/tools/shien/report?about=${encodeURIComponent(`${e.name}（${e.region}${e.city ? ` ${e.city}` : ""}）`)}`}
                 className="ml-auto text-xs text-[var(--muted)] hover:text-[#c15b3f] hover:underline"
               >
                 🚩 間違いを報告
