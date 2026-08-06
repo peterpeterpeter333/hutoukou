@@ -21,9 +21,16 @@ const ERRORS: Record<string, string> = {
 export default async function ContactPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sent?: string; error?: string }>;
+  searchParams: Promise<{ sent?: string; error?: string; about?: string }>;
 }) {
-  const { sent, error } = await searchParams;
+  const { sent, error, about } = await searchParams;
+
+  // 一覧の「間違いを報告」から来た場合、対象と種類を自動で埋める
+  const isReport = !!about;
+  const defaultCategory = isReport ? "掲載情報の誤り・修正依頼" : "ご質問・ご要望";
+  const defaultMessage = isReport
+    ? `【掲載情報の誤り・修正の報告】\n対象：${about}\n\n（どこが違うか、正しい情報が分かる範囲で教えてください。ご協力ありがとうございます）\n`
+    : "";
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
@@ -37,6 +44,12 @@ export default async function ContactPage({
         いのちや安全にかかわる緊急のときは、このフォームではなく公的な相談窓口をご利用ください。
         <br />24時間子供SOSダイヤル：0120-0-78310 ／ チャイルドライン：0120-99-7777
       </div>
+
+      {isReport && !sent && (
+        <p className="mt-6 rounded-xl bg-[var(--color-brand-soft)] px-4 py-3 text-sm text-[var(--color-brand-dark)]">
+          🚩 支援先一覧の情報について報告いただけます。下のフォームから送ってください（対象は自動で入っています）。
+        </p>
+      )}
 
       {sent && (
         <p className="mt-6 rounded-xl bg-[var(--color-brand-soft)] px-4 py-3 text-sm text-[var(--color-brand-dark)]">
@@ -53,8 +66,9 @@ export default async function ContactPage({
         <form action={submitContact} className="mt-6 space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium">お問い合わせの種類</label>
-            <select name="category" className="field" defaultValue="ご質問・ご要望">
+            <select name="category" className="field" defaultValue={defaultCategory}>
               <option>ご質問・ご要望</option>
+              <option>掲載情報の誤り・修正依頼</option>
               <option>投稿・アカウントについて</option>
               <option>不具合の報告</option>
               <option>個人情報の取り扱いについて</option>
@@ -86,6 +100,7 @@ export default async function ContactPage({
               required
               rows={7}
               maxLength={4000}
+              defaultValue={defaultMessage}
               className="field resize-y"
               placeholder="お問い合わせの内容をご記入ください。"
             />

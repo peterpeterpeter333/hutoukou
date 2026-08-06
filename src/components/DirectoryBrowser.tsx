@@ -106,14 +106,29 @@ export function DirectoryBrowser() {
               {e.tel && (
                 <a href={telHref(e.tel)} className="font-bold text-[var(--color-brand-dark)] hover:underline">📞 {e.tel}</a>
               )}
-              {e.url && (
+              {e.url ? (
                 <a href={e.url} target="_blank" rel="noopener noreferrer" className="text-[var(--color-brand-dark)] hover:underline">🔗 公式サイト</a>
+              ) : (
+                <a
+                  href={`https://www.google.com/search?q=${encodeURIComponent(`${e.name} ${e.region}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--color-brand-dark)] hover:underline"
+                >
+                  🔍 Google検索
+                </a>
               )}
               {e.source && (
                 <a href={e.source} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--muted)] hover:underline">
                   出典{e.sourceName ? `：${e.sourceName}` : ""}
                 </a>
               )}
+              <a
+                href={`/contact?about=${encodeURIComponent(`${e.name}（${e.region}${e.city ? ` ${e.city}` : ""}）`)}`}
+                className="ml-auto text-xs text-[var(--muted)] hover:text-[#c15b3f] hover:underline"
+              >
+                🚩 間違いを報告
+              </a>
             </div>
           </div>
         ))}
