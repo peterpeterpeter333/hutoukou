@@ -14,6 +14,7 @@ export function Footer() {
             <Link href="/questions" className="hover:underline">みんなの質問</Link>
             <Link href="/circles" className="hover:underline">サークル</Link>
             <Link href="/ask" className="hover:underline">質問する</Link>
+            <Link href="/guide/shinro" className="hover:underline">進路の見取り図</Link>
             <Link href="/tools/soudan" className="hover:underline">相談窓口一覧</Link>
             <Link href="/about" className="hover:underline">とびらについて</Link>
             <Link href="/terms" className="hover:underline">利用規約</Link>
