@@ -28,69 +28,19 @@ export type DirectoryEntry = {
   type: EntryType;
   region: Region;
   online: boolean; // オンライン対応の有無
+  city?: string; // 市区町村
   ages?: string; // 対象（例：小〜高、18歳まで）
   url?: string; // 公式URL
   tel?: string; // 電話（tel:にも使う）
-  note?: string; // 自分の言葉での一言（相手の紹介文をコピペしない）
+  note?: string; // 一言説明
   official?: boolean; // 公的機関か
+  source?: string; // 出典URL（データの根拠）
+  sourceName?: string; // 出典の名前
   verify?: boolean; // 情報の確認が必要（※要確認タグ表示）
 };
 
-export const ENTRIES: DirectoryEntry[] = [
-  // ── 全国の相談窓口（番号は確認済み。よりそいのみ要確認） ──
-  {
-    id: "sos",
-    name: "24時間子供SOSダイヤル",
-    type: "相談窓口",
-    region: "全国",
-    online: false,
-    tel: "0120-0-78310",
-    official: true,
-    note: "文部科学省の窓口。24時間・無料。子ども本人も保護者も相談できます。",
-  },
-  {
-    id: "childline",
-    name: "チャイルドライン",
-    type: "相談窓口",
-    region: "全国",
-    online: true,
-    ages: "18歳まで",
-    tel: "0120-99-7777",
-    official: true,
-    note: "名前を言わなくてもOK。チャット相談あり。毎日16:00〜21:00。",
-  },
-  {
-    id: "jidou-189",
-    name: "児童相談所虐待対応ダイヤル 189",
-    type: "相談窓口",
-    region: "全国",
-    online: false,
-    tel: "189",
-    official: true,
-    note: "「いちはやく」。子どもの安全が心配なときに。24時間・無料。",
-  },
-  {
-    id: "yorisoi",
-    name: "よりそいホットライン",
-    type: "相談窓口",
-    region: "全国",
-    online: true,
-    tel: "0120-279-338",
-    official: true,
-    verify: true,
-    note: "どんな悩みでも受け止めてくれる窓口。24時間・無料。",
-  },
+// データは src/data/supports.json に集約（公開情報をもとに作成）。
+// 追加・修正はそのJSONを編集する。
+import raw from "@/data/supports.json";
 
-  // ── ここから下に、地域の支援先を追加していく ──
-  // 例）文科省「学びの多様化学校（不登校特例校）」の公式一覧から：
-  // {
-  //   id: "example-tokyo-1",
-  //   name: "（学校名）",
-  //   type: "学びの多様化学校",
-  //   region: "東京都",
-  //   online: false,
-  //   url: "https://…",
-  //   official: true,
-  //   note: "（自分の言葉で一言）",
-  // },
-];
+export const ENTRIES: DirectoryEntry[] = raw as DirectoryEntry[];

@@ -27,9 +27,19 @@ export default function ShienPage() {
 
       <h1 className="font-round text-3xl font-bold">不登校の支援先を探す</h1>
       <p className="mt-3 text-[var(--muted)]">
-        フリースクール、教育支援センター、学びの多様化学校（特例校）、相談窓口などを、
+        フリースクール、学びの多様化学校（特例校）、親の会、相談窓口などを、
         地域・種類・オンライン対応で絞り込んで探せます。
       </p>
+
+      <div className="mt-4 rounded-xl bg-[var(--color-accent-soft)] p-4 text-sm text-[#8a4632]">
+        掲載情報は、公開されているリスト（文部科学省・フリースクール全国ネットワーク・
+        各団体のネットワーク等）をもとにまとめたものです。
+        <strong>電話番号やURLが最新・正確とは限りません</strong>ので、ご利用の前に各支援先の
+        公式情報で必ずご確認ください（各項目に「出典」リンクを付けています）。
+        誤りの報告・掲載の修正/削除は
+        <Link href="/contact" className="font-semibold text-[var(--color-brand-dark)] hover:underline">お問い合わせ</Link>
+        からお願いします。
+      </div>
 
       <div className="mt-6">
         <DirectoryBrowser />

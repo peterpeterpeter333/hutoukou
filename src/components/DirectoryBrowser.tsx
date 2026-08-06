@@ -90,7 +90,7 @@ export function DirectoryBrowser() {
           <div key={e.id} className="card p-4">
             <div className="flex flex-wrap items-center gap-2">
               <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${TYPE_STYLE[e.type]}`}>{e.type}</span>
-              <span className="text-xs text-[var(--muted)]">{e.region}</span>
+              <span className="text-xs text-[var(--muted)]">{e.region}{e.city ? ` ${e.city}` : ""}</span>
               {e.online && (
                 <span className="rounded-full bg-[var(--color-brand-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--color-brand-dark)]">オンライン可</span>
               )}
@@ -108,6 +108,11 @@ export function DirectoryBrowser() {
               )}
               {e.url && (
                 <a href={e.url} target="_blank" rel="noopener noreferrer" className="text-[var(--color-brand-dark)] hover:underline">🔗 公式サイト</a>
+              )}
+              {e.source && (
+                <a href={e.source} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--muted)] hover:underline">
+                  出典{e.sourceName ? `：${e.sourceName}` : ""}
+                </a>
               )}
             </div>
           </div>
