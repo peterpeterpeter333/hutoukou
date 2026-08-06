@@ -12,10 +12,17 @@ export const metadata: Metadata = {
 // ツール一覧（増えたらここに足すだけ）
 const TOOLS = [
   {
+    href: "/tools/shien",
+    emoji: "🧭",
+    title: "不登校の支援先を探す",
+    desc: "フリースクール・教育支援センター・特例校・相談窓口を、地域や種類で絞り込んで探せます。",
+    ready: true,
+  },
+  {
     href: "/tools/soudan",
     emoji: "📞",
     title: "不登校の相談窓口 一覧",
-    desc: "今すぐ話せる全国の窓口、状況別の相談先、地域の窓口の探し方をまとめました。",
+    desc: "今すぐ話せる全国の窓口、状況別の相談先をまとめました。",
     ready: true,
   },
 ];

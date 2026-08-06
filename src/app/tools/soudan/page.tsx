@@ -115,7 +115,9 @@ export default function SoudanPage() {
       <section className="mt-10">
         <h2 className="mb-1 font-round text-xl font-bold">🗺 地域から探す</h2>
         <p className="mb-3 text-sm text-[var(--muted)]">
-          お住まいの都道府県を選ぶと、地域の公的な相談窓口を検索できます。
+          フリースクールや特例校を含めて探すなら
+          <Link href="/tools/shien" className="font-semibold text-[var(--color-brand-dark)] hover:underline">「支援先を探す」</Link>
+          が便利です。ここでは、お住まいの都道府県から公的な窓口を検索できます。
         </p>
         <div className="card p-5">
           <PrefectureFinder />
