@@ -13,12 +13,17 @@ export const PRIORITIES: { key: Priority; label: string; emoji: string }[] = [
   { key: "ibasho", label: "まず安心できる居場所", emoji: "🏠" },
 ];
 
-// 公式リンク（一次情報に限定）
+// 公式リンク（一次情報＝公的機関・業界団体に限定。事業者の広告記事には飛ばさない）
 const L = {
   shugaku: { label: "文部科学省：高校生等への修学支援（就学支援金）", url: "https://www.mext.go.jp/a_menu/shotou/mushouka/" },
-  kounin: { label: "文部科学省：高卒認定試験", url: "https://www.mext.go.jp/a_menu/koutou/shiken/" },
-  kouninKamoku: { label: "文部科学省：高卒認定 試験科目・合格要件", url: "https://www.mext.go.jp/a_menu/koutou/shiken/01339.html" },
-  tokurei: { label: "文部科学省：学びの多様化学校（設置校一覧）", url: "https://www.mext.go.jp/a_menu/shotou/seitoshidou/1387004.htm" },
+  tanni: { label: "文部科学省：単位制高等学校について", url: "https://www.mext.go.jp/a_menu/shotou/kaikaku/seido/04033102.htm" },
+  teijiTokyo: { label: "東京都教育委員会：定時制課程 学校選びに当たって", url: "https://www.kyoiku.metro.tokyo.lg.jp/documents/d/kyoiku/04_177" },
+  kounin: { label: "文部科学省：高等学校卒業程度認定試験", url: "https://www.mext.go.jp/a_menu/koutou/shiken/" },
+  kouninKamoku: { label: "文部科学省：高卒認定 試験科目・合格要件・出題範囲", url: "https://www.mext.go.jp/a_menu/koutou/shiken/01339.html" },
+  tokurei: { label: "文部科学省：学びの多様化学校について（設置校一覧）", url: "https://www.mext.go.jp/a_menu/shotou/seitoshidou/1385821.htm" },
+  senshuShirusen: { label: "文部科学省：知る専（高等専修学校）", url: "https://shirusen.mext.go.jp/koto/" },
+  senshuDaigaku: { label: "全国高等専修学校協会：大学入学資格について", url: "https://www.zenkokukoutousenshugakkoukyoukai.gr.jp/about03.html" },
+  freeTsuchi: { label: "文部科学省：不登校児童生徒への支援の在り方について（通知）", url: "https://www.mext.go.jp/a_menu/shotou/seitoshidou/1422155.htm" },
 };
 
 export type Route = {
@@ -61,11 +66,11 @@ export const ROUTES: Route[] = [
       "環境が合わないと、また行きづらくなることもある",
     ],
     nyugaku:
-      "内申＋当日の学力検査が基本ですが、当日点を重視する学校・面接や自己推薦で受けられる学校もあり、内申が低くても道はあります。学校説明会で「不登校への理解」「別室・保健室登校の可否」を確認しておくと安心です。",
+      "内申＋当日の学力検査が基本ですが、当日点を重視する学校・面接や自己推薦で受けられる学校もあり、内申が低くても道はあります。不登校生の欠席日数の扱いや特別枠は自治体ごとに違うため、お住まいの都道府県教委の「入学者選抜要項」が最も確実です。学校説明会で「不登校への理解」「別室・保健室登校の可否」も確認を。",
     after: "大学・短大・専門学校・就職など、進路の幅が最も広いです。",
     costDetail:
       "公立は授業料が比較的安め、私立は高めです。ただし2026年度から国の「就学支援金」は所得制限が撤廃され、全世帯が対象に。私立は年額 約45万円（上限45万7,200円）まで支給されます（2026年時点）。※申請しないと支給されず、遡っての支給もないので注意。金額・条件は公式で要確認。",
-    links: [L.shugaku],
+    links: [L.tanni, L.shugaku],
     tags: ["kousotsu"],
   },
   {
@@ -87,7 +92,7 @@ export const ROUTES: Route[] = [
     nyugaku: "学力検査は基礎中心のことが多く、面接を重視する学校も。比較的入りやすい傾向です。",
     after: "大学・専門・就職。単位制なら自分のペースで学べます。",
     costDetail: "公立中心で費用は抑えめ。就学支援金の対象です（2026年度から所得制限が撤廃・全世帯対象。要確認）。",
-    links: [L.shugaku],
+    links: [L.tanni, L.teijiTokyo, L.shugaku],
     tags: ["kousotsu", "lowCost"],
   },
   {
@@ -209,7 +214,7 @@ export const ROUTES: Route[] = [
     nyugaku: "面接・書類中心の学校が多いです。",
     after: "専門分野への就職、専門学校・大学への進学。",
     costDetail: "学校・分野によって幅があります。一定の要件を満たす課程は就学支援金の対象になる場合があります（要確認）。",
-    links: [L.shugaku],
+    links: [L.senshuShirusen, L.senshuDaigaku, L.shugaku],
     tags: ["kousotsu"],
   },
   {
@@ -221,20 +226,21 @@ export const ROUTES: Route[] = [
     cost: "施設により様々（要確認）",
     fit: "まずは安心できる居場所がほしい（義務教育段階）",
     overview:
-      "民間が運営する、学校以外の学びの場・居場所です。主に小中学生が対象で、決まったカリキュラムがない所も多く、安心して過ごすことを大切にします。在籍する学校の校長の判断で「出席扱い」になる場合があります。",
+      "民間が運営する、学校以外の学びの場・居場所です。主に小中学生が対象で、決まったカリキュラムがない所も多く、安心して過ごすことを大切にします。文科省の通知により、保護者と学校が連携し、通所して指導を受けるなど一定の要件を満たせば、在籍校の校長判断で「出席扱い」になる場合があります。さらに2024年の学校教育法施行規則の改正で、学校外での学習成果を成績評価に反映できるようにもなりました（出席だけでなく成績にも関わるように）。",
     pros: [
       "安心できる居場所になり、外とのつながりを保てる",
       "自由度が高く、一人ひとりのペースを尊重してもらえる",
       "同じ経験の仲間や、理解ある大人と出会える",
-      "在籍校と連携すれば出席扱いになることもある",
+      "要件を満たせば出席扱い・成績評価につながる場合がある（学校と要相談）",
     ],
     cons: [
       "民間のため費用は施設により様々（無料〜月数万円）",
       "卒業資格そのものにはならない（在籍校に籍を置く）",
       "高校世代の似た選択肢は、通信制＋サポート校が近い",
     ],
-    nyugaku: "見学・体験から始め、本人が安心できるか確かめて決めます。",
+    nyugaku: "見学・体験から始め、本人が安心できるか確かめて決めます。出席扱いを希望する場合は、早めに在籍校（担任・校長）に相談を。",
     costDetail: "施設により無料〜月数万円と幅があります（要確認）。",
+    links: [L.freeTsuchi],
     tags: ["lowAttend", "ibasho"],
   },
 ];
