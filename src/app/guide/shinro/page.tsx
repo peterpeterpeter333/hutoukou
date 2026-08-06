@@ -32,6 +32,30 @@ export default function ShinroPage() {
         まずは全体を一望して、わが子に合いそうなものから見ていきましょう。
       </p>
 
+      {/* 2026年の制度変更（重要） */}
+      <div className="mt-6 rounded-2xl border border-[var(--color-brand)]/30 bg-[var(--color-brand-soft)] p-5">
+        <div className="font-round font-bold text-[var(--color-brand-dark)]">
+          💡 2026年から「高校無償化」が変わりました
+        </div>
+        <p className="mt-2 text-sm text-[var(--fg)]">
+          国の「就学支援金」は、2026年度から<strong>所得制限が撤廃され、全世帯が対象</strong>になりました。
+          私立高校は年額 約45万円（上限45万7,200円）まで支給。
+          <strong>私立通信制も支給が拡充</strong>され、全国の認可通信制が対象です。
+          「私立は高いから」と選択肢を消す前に、一度ご確認を。
+        </p>
+        <p className="mt-2 text-xs text-[var(--muted)]">
+          ※ 申請しないと支給されず、遡っての支給もありません。金額・条件は必ず公式でご確認ください。（2026年時点）
+        </p>
+        <a
+          href="https://www.mext.go.jp/a_menu/shotou/mushouka/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 inline-block text-sm text-[var(--color-brand-dark)] underline hover:no-underline"
+        >
+          文部科学省：高校生等への修学支援 ↗
+        </a>
+      </div>
+
       <div className="mt-6">
         <ShinroGuide />
       </div>
@@ -55,8 +79,9 @@ export default function ShinroPage() {
       </section>
 
       <p className="mt-8 text-xs text-[var(--muted)]">
-        ※ 各進路の名称・仕組みは一般的な説明です。入学条件・費用・単位や資格の扱いは学校や自治体によって異なります。
-        具体的な内容は各校・各自治体の公式情報でご確認ください（参考：文部科学省ほか）。
+        ※ 各進路の名称・仕組みは一般的な説明です（2026年8月時点）。入学条件・費用・日程・単位や資格の扱いは
+        学校や自治体・年度によって異なり、制度も変わります。受験料や支援金などの金額・日程は、
+        必ず各リンク先の公式（文部科学省・各都道府県教育委員会・各校）で最新をご確認ください。
       </p>
     </div>
   );

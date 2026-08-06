@@ -159,6 +159,22 @@ export function ShinroGuide() {
                       </div>
                     )}
                   </div>
+
+                  {/* 公式リンク（一次情報） */}
+                  {r.links && r.links.length > 0 && (
+                    <div className="border-t pt-3">
+                      <div className="mb-1 text-sm font-bold text-[var(--color-brand-dark)]">🔗 くわしくは（公式）</div>
+                      <ul className="space-y-1 text-sm">
+                        {r.links.map((l) => (
+                          <li key={l.url}>
+                            <a href={l.url} target="_blank" rel="noopener noreferrer" className="text-[var(--color-brand-dark)] underline hover:no-underline">
+                              {l.label} ↗
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
