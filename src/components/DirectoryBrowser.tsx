@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ENTRY_TYPES,
   REGIONS,
@@ -25,6 +25,11 @@ export function DirectoryBrowser({ entries }: { entries: DirectoryEntry[] }) {
   const [region, setRegion] = useState<"すべて" | Region>("すべて");
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [q, setQ] = useState("");
+  const PAGE = 60;
+  const [limit, setLimit] = useState(PAGE);
+
+  // 絞り込みが変わったら表示件数をリセット
+  useEffect(() => setLimit(PAGE), [type, region, onlineOnly, q]);
 
   const results = useMemo(() => {
     const kw = q.trim();
@@ -82,11 +87,14 @@ export function DirectoryBrowser({ entries }: { entries: DirectoryEntry[] }) {
       </div>
 
       {/* 件数 */}
-      <p className="mt-4 text-sm text-[var(--muted)]">{results.length}件</p>
+      <p className="mt-4 text-sm text-[var(--muted)]">
+        {results.length}件
+        {results.length > limit && <span>（{limit}件を表示中）</span>}
+      </p>
 
       {/* 一覧 */}
       <div className="mt-2 grid gap-3">
-        {results.map((e) => (
+        {results.slice(0, limit).map((e) => (
           <div key={e.id} className="card p-4">
             <div className="flex flex-wrap items-center gap-2">
               <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${TYPE_STYLE[e.type]}`}>{e.type}</span>
@@ -142,6 +150,14 @@ export function DirectoryBrowser({ entries }: { entries: DirectoryEntry[] }) {
           </p>
         )}
       </div>
+
+      {results.length > limit && (
+        <div className="mt-4 flex justify-center">
+          <button onClick={() => setLimit((l) => l + PAGE)} className="btn btn-soft">
+            もっと見る（残り{results.length - limit}件）
+          </button>
+        </div>
+      )}
     </div>
   );
 }

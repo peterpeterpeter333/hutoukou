@@ -99,12 +99,66 @@ export function ShinroGuide() {
               </div>
 
               {open && (
-                <div className="mt-3 border-t pt-3">
-                  <p className="text-sm text-[var(--muted)]">
-                    <span className="font-semibold text-[var(--fg)]">こんな人に：</span>
+                <div className="mt-4 space-y-4 border-t pt-4">
+                  {/* 概要 */}
+                  <div>
+                    <div className="mb-1 text-sm font-bold text-[var(--color-brand-dark)]">📘 どんな進路？</div>
+                    <p className="prose-jp text-sm text-[var(--fg)]">{r.overview}</p>
+                  </div>
+
+                  {/* こんな人に */}
+                  <div className="rounded-xl bg-[var(--color-brand-soft)]/50 px-3 py-2 text-sm">
+                    <span className="font-semibold">こんな人に：</span>
                     {r.fit}
-                  </p>
-                  <p className="prose-jp mt-2 text-sm text-[var(--fg)]">{r.detail}</p>
+                  </div>
+
+                  {/* メリット・注意点 */}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <div className="mb-1 text-sm font-bold text-[var(--color-brand-dark)]">💚 メリット</div>
+                      <ul className="space-y-1 text-sm">
+                        {r.pros.map((p, i) => (
+                          <li key={i} className="flex gap-1.5">
+                            <span aria-hidden className="text-[var(--color-brand)]">◯</span>
+                            <span>{p}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <div className="mb-1 text-sm font-bold text-[#c15b3f]">🔎 注意したいこと</div>
+                      <ul className="space-y-1 text-sm">
+                        {r.cons.map((c, i) => (
+                          <li key={i} className="flex gap-1.5">
+                            <span aria-hidden className="text-[#c15b3f]">・</span>
+                            <span>{c}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* 入り方・卒業後・費用 */}
+                  <div className="grid gap-2">
+                    {r.nyugaku && (
+                      <div className="text-sm">
+                        <span className="font-semibold text-[var(--color-brand-dark)]">🚪 入り方：</span>
+                        <span className="text-[var(--fg)]">{r.nyugaku}</span>
+                      </div>
+                    )}
+                    {r.after && (
+                      <div className="text-sm">
+                        <span className="font-semibold text-[var(--color-brand-dark)]">🌸 卒業後：</span>
+                        <span className="text-[var(--fg)]">{r.after}</span>
+                      </div>
+                    )}
+                    {r.costDetail && (
+                      <div className="text-sm">
+                        <span className="font-semibold text-[var(--color-brand-dark)]">💰 費用の目安：</span>
+                        <span className="text-[var(--fg)]">{r.costDetail}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
